@@ -10,8 +10,8 @@ namespace Canti.CryptoNote.RPC
     {
         private string Method { get; set; }
         private string Password { get; set; }
-        private Dictionary<string, object> Params;
-        private Dictionary<string, object> ExternalParams;
+        private Dictionary<string, object> Params { get; set; }
+        private Dictionary<string, object> ExternalParams { get; set; }
         internal MethodBuilder(string Method, string Password = "")
         {
             this.Method = Method;

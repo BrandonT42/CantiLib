@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using Canti.Data;
 
@@ -7,16 +8,8 @@ using Canti.Data;
 // - Figure out that ReadStrict shit to see what it's wanting
 namespace Canti.CryptoNote.P2P
 {
-    internal class LevinProtocol
+    internal partial class LevinProtocol
     {
-        // Constants
-        const Int64 LEVIN_SIGNATURE = 0x0101010101012101;      // Bender's Nightmare
-        const Int32 LEVIN_PACKET_REQUEST = 0x00000001;
-        const Int32 LEVIN_PACKET_RESPONSE = 0x00000002;
-        const Int32 LEVIN_DEFAULT_MAX_PACKET_SIZE = 100000000; // 100MB by Default
-        const Int32 LEVIN_PROTOCOL_VER_1 = 1;
-        const Int32 LEVIN_PROTOCOL_RETCODE_SUCCESS = 1;
-
         // Variables
         private Server Connection;
 
@@ -26,19 +19,37 @@ namespace Canti.CryptoNote.P2P
             // Link server
             this.Connection = Connection;
 
-            // Add an event handler to the onDataReceived event
-            this.Connection.OnDataReceived += delegate (object Request, EventArgs e)
+            // Add an event handler to the OnCommandReceived event
+            this.Connection.OnCommandReceived += delegate (object sender, EventArgs e)
+            {
+                // Get command data
+                Command Command = (Command)sender;
+
+                // Command is a handshake
+                if (Command.CommandCode == Commands.Handshake.Id) HandleHandshakeRequest(Command);
+
+                // Command is a ping
+                else if (Command.CommandCode == Commands.Ping.Id)
+                {
+                    /*Commands.Ping.Response resp = new Commands.Ping.Response();
+                    //    resp.PING_OK_RESPONSE_STATUS_TEXT, m_node.getPeerId() };
+                    Context.SendMessage(MakeReply(Commands.Ping.Id, LevinProtocol.Encode(resp), LevinProtocol.LEVIN_PROTOCOL_RETCODE_SUCCESS));
+                    return false;*/
+                    SendReply(Command.Source.GetStream(), (uint)Commands.Ping.Id, Encode("response"), LEVIN_PROTOCOL_RETCODE_SUCCESS);
+                }
+
+                // Unknown command
+                else Connection.OnError?.Invoke("Unexpected command: " + Command.CommandCode, EventArgs.Empty);
+            };
+
+            // Add an event handler to the OnDataReceived event
+            this.Connection.OnDataReceived += delegate (object sender, EventArgs e)
             {
                 // Get packet data
-                Packet Packet = (Packet)Request;
-
-                // Decode bytes
-                byte[] HeadBytes = Packet.Data.SubArray(0, 33);
-                bucket_head2 Head = bucket_head2.FromByteArray(HeadBytes);
-                byte[] BodyBytes = Packet.Data.SubArray(33, (Int32)Head.PacketSize);
+                Packet Packet = (Packet)sender;
 
                 // Decode command
-                this.Connection.OnCommandReceived?.Invoke(ReadCommand(Head, BodyBytes), EventArgs.Empty);
+                this.Connection.OnCommandReceived?.Invoke(ReadCommand(Packet), EventArgs.Empty);
             };
         }
 
@@ -58,8 +69,13 @@ namespace Canti.CryptoNote.P2P
         }
 
         // Reads a command
-        internal Command ReadCommand(bucket_head2 Head, byte[] Body)
+        internal Command ReadCommand(Packet Packet)
         {
+            // Decode packet information
+            byte[] HeadBytes = Packet.Data.SubArray(0, 33);
+            bucket_head2 Head = bucket_head2.FromByteArray(HeadBytes);
+            byte[] BodyBytes = Packet.Data.SubArray(33, (Int32)Head.PacketSize);
+
             // Verify packet information
             //byte[] HeadBytes = Encoding.ObjectToByteArray(Head);
             //if (!ReadStrict(HeadBytes, 0, HeadBytes.Length)) return Command;
@@ -78,8 +94,9 @@ namespace Canti.CryptoNote.P2P
             // Write to command
             return new Command
             {
+                Source =        Packet.Client,
                 CommandCode =   Head.CommandCode,
-                Body =          Body,
+                Body =          BodyBytes,
                 IsNotify =      !Head.ResponseRequired,
                 IsResponse =    (Head.Flags & LEVIN_PACKET_RESPONSE) == LEVIN_PACKET_RESPONSE
             };
@@ -157,78 +174,50 @@ namespace Canti.CryptoNote.P2P
             // Write data to stream
             Connection.Broadcast(WriteBuffer);
         }
-    }
 
-    [Serializable]
-    internal struct Command
-    {
-        internal UInt32 CommandCode { get; set; }
-        internal bool IsNotify { get; set; }
-        internal bool IsResponse { get; set; }
-        internal byte[] Body { get; set; }
-        internal bool NeedsReply { get { return !(IsNotify || IsResponse); } }
-    }
-
-    [Serializable]
-    internal struct bucket_head2
-    {
-        internal UInt64 Signature { get; set; }
-        internal UInt64 PacketSize { get; set; }
-        internal bool ResponseRequired { get; set; }
-        internal UInt32 CommandCode { get; set; }
-        internal UInt32 ReturnCode { get; set; }
-        internal UInt32 Flags { get; set; }
-        internal UInt32 ProtocolVersion { get; set; }
-        internal byte[] ToByteArray()
+        // Handles a handshake request
+        internal void HandleHandshakeRequest(Command Command)
         {
-            Int32 Offset = 0;
-            byte[] Output = new byte[33];
-            byte[] SignatureBytes = BitConverter.GetBytes(Signature);
-            Buffer.BlockCopy(SignatureBytes, 0, Output, Offset, SignatureBytes.Length);
-            Offset += SignatureBytes.Length;
-            byte[] PacketSizeBytes = BitConverter.GetBytes(PacketSize);
-            Buffer.BlockCopy(PacketSizeBytes, 0, Output, Offset, PacketSizeBytes.Length);
-            Offset += PacketSizeBytes.Length;
-            byte[] ResponseRequiredBytes = BitConverter.GetBytes(ResponseRequired);
-            Buffer.BlockCopy(ResponseRequiredBytes, 0, Output, Offset, ResponseRequiredBytes.Length);
-            Offset += ResponseRequiredBytes.Length;
-            byte[] CommandCodeBytes = BitConverter.GetBytes(CommandCode);
-            Buffer.BlockCopy(CommandCodeBytes, 0, Output, Offset, CommandCodeBytes.Length);
-            Offset += CommandCodeBytes.Length;
-            byte[] ReturnCodeBytes = BitConverter.GetBytes(ReturnCode);
-            Buffer.BlockCopy(ReturnCodeBytes, 0, Output, Offset, ReturnCodeBytes.Length);
-            Offset += ReturnCodeBytes.Length;
-            byte[] FlagsBytes = BitConverter.GetBytes(Flags);
-            Buffer.BlockCopy(FlagsBytes, 0, Output, Offset, FlagsBytes.Length);
-            Offset += FlagsBytes.Length;
-            byte[] ProtocolVersionBytes = BitConverter.GetBytes(ProtocolVersion);
-            Buffer.BlockCopy(ProtocolVersionBytes, 0, Output, Offset, ProtocolVersionBytes.Length);
-            return Output;
-        }
-        internal static bucket_head2 FromByteArray(byte[] Data)
-        {
-            return new bucket_head2
+            if (!Decode(Command.Body, out Commands.Handshake.Request Request))
             {
-                Signature = BitConverter.ToUInt64(Data.SubArray(0, 8)),
-                PacketSize = BitConverter.ToUInt64(Data.SubArray(8, 8)),
-                ResponseRequired = BitConverter.ToBoolean(Data.SubArray(16, 1)),
-                CommandCode = BitConverter.ToUInt32(Data.SubArray(17, 4)),
-                ReturnCode = BitConverter.ToUInt32(Data.SubArray(21, 4)),
-                Flags = BitConverter.ToUInt32(Data.SubArray(25, 4)),
-                ProtocolVersion = BitConverter.ToUInt32(Data.SubArray(29, 4))
-            };
-        }
-    };
+                Connection.OnError?.Invoke("Failed to decode COMMAND_HANDSHAKE request", EventArgs.Empty);
+                return;
+            }
 
-    enum LevinError : Int32
-    {
-        OK = 0,
-        ERROR_CONNECTION = -1,
-        ERROR_CONNECTION_NOT_FOUND = -2,
-        ERROR_CONNECTION_DESTROYED = -3,
-        ERROR_CONNECTION_TIMEDOUT = -4,
-        ERROR_CONNECTION_NO_DUPLEX_PROTOCOL = -5,
-        ERROR_CONNECTION_HANDLER_NOT_DEFINED = -6,
-        ERROR_FORMAT = -7
-    };
+            //m_node.handleNodeData(Request.NodeData, m_context);
+            WriteHandshake(new P2pMessage
+            {
+                Source = Command.Source,
+                Type = Command.CommandCode,
+                Data = Encoding.ObjectToByteArray(Request.PayloadData)
+            }); // enqueue payload info
+        }
+
+        // Writes a handshake request
+        void WriteHandshake(P2pMessage message) {
+            Decode(message.Data, out CORE_SYNC_DATA CoreSync);
+
+            if (message.Source != null)
+            {
+                // response
+                Commands.Handshake.Response res;
+                res.NodeData = new object();//m_node.getNodeData();
+                res.PayloadData = CoreSync;
+                res.LocalPeerList = new List<PeerlistEntry>(); //m_node.getLocalPeerList();
+                SendReply(message.Source.GetStream(), (uint)Commands.Handshake.Id, Encode(res), LEVIN_PROTOCOL_RETCODE_SUCCESS);
+                //m_node.tryPing(m_context);
+            }
+            else
+            {
+                // request
+                Commands.Handshake.Request req = new Commands.Handshake.Request
+                {
+                    //req.NodeData = m_node.getNodeData();
+                    PayloadData = CoreSync
+                };
+                SendReply(message.Source.GetStream(), Commands.Handshake.Id, Encode(req), LEVIN_PACKET_RESPONSE);
+                //WriteMessage(makeRequest(Commands.Handshake.Id, Encode(req)));
+            }
+        }
+    }
 }
