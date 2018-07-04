@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Canti.CryptoNote
+namespace Canti.CryptoNote.RPC
 {
     [Serializable]
     internal class HttpRequestResult

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Canti.Data
 {
-    public class Encoding
+    public static class Encoding
     {
         /// <summary>
         /// Encodes an object to a hex string

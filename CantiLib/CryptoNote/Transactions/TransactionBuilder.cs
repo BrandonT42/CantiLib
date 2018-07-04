@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using Canti.CryptoNote.RPC;
 using Canti.Utilities;
 
 namespace Canti.CryptoNote
@@ -8,12 +8,12 @@ namespace Canti.CryptoNote
     public class TransactionBuilder
     {
         // Transaction object to build on top of
-        Transaction Transaction;
+        TransactionContainer Transaction;
 
         // Initialization
         public TransactionBuilder()
         {
-            Transaction = new Transaction
+            Transaction = new TransactionContainer
             {
                 Addresses = new List<string>(),
                 Anonymity = 0,

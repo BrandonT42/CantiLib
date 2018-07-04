@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Canti.CryptoNote
 {
-    internal class Transaction
+    internal class TransactionContainer
     {
         internal List<string> Addresses { get; set; }
         internal UInt64 Anonymity { get; set; }

@@ -5,9 +5,9 @@ using System.Threading;
 
 namespace Canti.Utilities
 {
-    public enum Level
+    public enum Level : int
     {
-        DEBUG, INFO, WARNING, ERROR, FATAL
+        FATAL, ERROR, WARNING, INFO, DEBUG
     }
 
     public struct Entry
@@ -26,12 +26,14 @@ namespace Canti.Utilities
     public class Logger
     {
         public string LogFile { get; private set; }
+        public Level LogLevel { get; set; }
         private Queue<Entry> Entries { get; set; }
         private bool Running { get; set; }
 
         public Logger(string LogFile = null)
         {
             this.LogFile = LogFile;
+            LogLevel = 0;
             Entries = new Queue<Entry>();
             Running = true;
         }
@@ -49,9 +51,12 @@ namespace Canti.Utilities
                     else
                     {
                         Entry Entry = Entries.Dequeue();
-                        string Output = string.Format("{0} [{1}] {2}", Entry.Timestamp, Entry.Level, Entry.Content);
-                        Console.WriteLine(Output);
-                        if (LogFile != null) File.AppendAllText(LogFile, Output + Environment.NewLine);
+                        if (LogLevel >= Entry.Level)
+                        {
+                            string Output = string.Format("{0} [{1}] {2}", Entry.Timestamp.ToShortTimeString(), Entry.Level, Entry.Content);
+                            Console.WriteLine(Output);
+                            if (LogFile != null) File.AppendAllText(LogFile, Output + Environment.NewLine);
+                        }
                     }
                     Thread.Sleep(10);
                 }
@@ -64,9 +69,9 @@ namespace Canti.Utilities
             Running = false;
         }
 
-        public void Log(Level Level, string Content)
+        public void Log(Level Level, string Content, params object[] Params)
         {
-            Entries.Enqueue(new Entry(DateTime.Now.ToUniversalTime(), Level, Content));
+            Entries.Enqueue(new Entry(DateTime.Now.ToUniversalTime(), Level, string.Format(Content, Params)));
         }
     }
 }

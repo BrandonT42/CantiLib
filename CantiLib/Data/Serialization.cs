@@ -4,7 +4,7 @@ using System.Runtime.Serialization.Json;
 
 namespace Canti.Data
 {
-    public class Serialization
+    public static class Serialization
     {
         public static string SerializeObjectToJson(object Input)
         {
@@ -37,6 +37,16 @@ namespace Canti.Data
                 DataContractJsonSerializer Serializer = new DataContractJsonSerializer(typeof(T));
                 return (T)Serializer.ReadObject(MemStream);
             }
+        }
+
+        /// <summary>
+        /// Gets a sub array from an object array
+        /// </summary>
+        public static T[] SubArray<T>(this T[] data, int index, int length)
+        {
+            T[] result = new T[length];
+            Array.Copy(data, index, result, 0, length);
+            return result;
         }
     }
 }

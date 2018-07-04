@@ -4,7 +4,7 @@ using System.IO;
 using System.Collections.Generic;
 using Canti.Data;
 
-namespace Canti.CryptoNote
+namespace Canti.CryptoNote.RPC
 {
     internal class MethodBuilder
     {
