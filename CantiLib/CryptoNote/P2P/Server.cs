@@ -14,25 +14,27 @@ namespace Canti.CryptoNote.P2P
 {
     public class Server
     {
-        // Variables
+        // Private variables
         private TcpListener Listener;
-        private IDictionary<TcpClient, Thread> Peers = new Dictionary<TcpClient, Thread>();
-        private IDictionary<Connection, TcpClient> ConnectedPeers = new Dictionary<Connection, TcpClient>();
-        private Queue<(TcpClient Peer, byte[] Data)> IncomingRequests = new Queue<(TcpClient Peer, byte[] Data)>();
-        internal Queue<P2pMessage> Broadcasts = new Queue<P2pMessage>();
+        private List<PeerConnection> Peers = new List<PeerConnection>();
+        private Queue<Packet> IncomingRequests = new Queue<Packet>();
+        private Queue<Packet> OutgoingRequests = new Queue<Packet>();
         private Thread IncomingRequestThread;
         private Thread OutgoingRequestThread;
+        private Thread PeerConnectionThread;
+
+        // Define data handling context
         private LevinProtocol Context;
-        private bool Running = true;
+
+        // Internal variables
+        internal bool Running = true;
 
         // Event handlers
+        public EventHandler OnError;
         public EventHandler OnDataReceived;
-        //public EventHandler OnDataSent;
-        public EventHandler OnCommandReceived;
-        public EventHandler OnRequestSent;
+        public EventHandler OnDataSent;
         public EventHandler OnPeerConnected;
         // public EventHandler OnPeerDisconnected;
-        public EventHandler OnError;
 
         // Start server on specified port
         public void Start(Int32 Port)
@@ -52,56 +54,34 @@ namespace Canti.CryptoNote.P2P
             OutgoingRequestThread = new Thread(ProcessOutgoingRequests);
             OutgoingRequestThread.Start();
 
-            // Start connection loop
-            new Thread(delegate ()
-            {
-                while (Running)
-                {
-                    // Loop as long as there are pending connections
-                    while (Listener.Pending())
-                    {
-                        // Accept client connection
-                        TcpClient Client = Listener.AcceptTcpClient();
-                        Console.WriteLine("[Server] Received a peer connection from {0}", Client.Client.RemoteEndPoint);
-
-                        // Add to peer list and start peer thread
-                        Peers.Add(Client, new Thread(() => PeerConnection(Client)));
-                        Peers[Client].Start();
-
-                        // Invoke connection event handler
-                        OnPeerConnected?.Invoke(Client, EventArgs.Empty);
-                    }
-
-                    // Let the thread sleep
-                    Thread.Sleep(1000);
-                }
-            }).Start();
+            // Start connection handling thread
+            PeerConnectionThread = new Thread(PeerConnection);
+            PeerConnectionThread.Start();
         }
 
-        // Handles peer connections
-        private void PeerConnection(TcpClient Client)
+        // Handles all incoming connections
+        private void PeerConnection()
         {
-            NetworkStream PeerStream = Client.GetStream();
-
-            // Begin an update loop
+            // Begin update loop
             while (Running)
             {
-                // Check if data is available
-                while (PeerStream.DataAvailable)
+                // Loop as long as there are pending connections
+                while (Listener.Pending())
                 {
-                    // Create a byte buffer then read incoming data
-                    Byte[] Buffer = new Byte[Client.Available];
-                    PeerStream.Read(Buffer, 0, Buffer.Length);
-                    // ^-- May need to find a way to wait to know whether a request has been fully received yet or not?
-                    IncomingRequests.Enqueue((Client, Buffer));
+                    // Accept client connection
+                    TcpClient Client = Listener.AcceptTcpClient();
+                    Console.WriteLine("[Server] Received a peer connection from {0}", Client.Client.RemoteEndPoint);
+
+                    // Add to peer list
+                    Peers.Add(new PeerConnection(this, Client));
+
+                    // Invoke connection event handler
+                    OnPeerConnected?.Invoke(Client, EventArgs.Empty);
                 }
 
                 // Let the thread sleep
-                Thread.Sleep(1000);
+                Thread.Sleep(200);
             }
-
-            // Close connection
-            Client.Close();
         }
 
         // Handles all incoming requests in order of appearance
@@ -110,17 +90,10 @@ namespace Canti.CryptoNote.P2P
             while (Running)
             {
                 // Wait for requests
-                while (IncomingRequests.Count > 0)
-                {
-                    // Get request data from queue
-                    (TcpClient Peer, byte[] Data) Request = IncomingRequests.Dequeue();
-
-                    // Invoke data received event
-                    OnDataReceived?.Invoke(new Packet(Request.Peer, Request.Data), EventArgs.Empty);
-                }
+                while (IncomingRequests.Count > 0) OnDataReceived?.Invoke(IncomingRequests.Dequeue(), EventArgs.Empty);
 
                 // Let the thread sleep
-                Thread.Sleep(1000);
+                Thread.Sleep(200);
             }
         }
 
@@ -130,57 +103,60 @@ namespace Canti.CryptoNote.P2P
             while (Running)
             {
                 // Wait for requests
-                while (Broadcasts.Count > 0)
+                while (OutgoingRequests.Count > 0)
                 {
                     // Get request data from queue
-                    P2pMessage Request = Broadcasts.Dequeue();
+                    Packet Request = OutgoingRequests.Dequeue();
 
-                    // Broadcast message
-                    Broadcast(Request.Type, Request.Data, false);
+                    // Broadcast data if no client is specified
+                    if (Request.Peer == null) Broadcast(Request.Data);
 
-                    // Invoke data received event
-                    OnRequestSent?.Invoke(Request, EventArgs.Empty);
+                    // Send to specified peer
+                    else SendMessage(Request.Peer, Request.Data);
+
+                    // Invoke data sent event
+                    OnDataSent?.Invoke(Request, EventArgs.Empty);
                 }
 
                 // Let the thread sleep
-                Thread.Sleep(1000);
+                Thread.Sleep(200);
             }
         }
 
         // Connect to a specified URL
         public void Connect(Connection Connection)
         {
-            // Check if peer has already been added
-            if (!ConnectedPeers.ContainsKey(Connection))
+            // Try to connect to peer
+            try
             {
                 // Create a connection
                 TcpClient Client = new TcpClient(Connection.Host, Connection.Port);
-                ConnectedPeers.Add(Connection, Client);
-                Peers.Add(Client, new Thread(() => PeerConnection(Client)));
-                Peers[Client].Start();
-
-                // Send a handshake
-                Commands.Handshake.Request req = new Commands.Handshake.Request
-                {
-                    //req.NodeData = m_node.getNodeData();
-                    PayloadData = new CORE_SYNC_DATA()
-                };
-                Context.SendReply(Client.GetStream(), Commands.Handshake.Id, LevinProtocol.Encode(req), LevinProtocol.LEVIN_PACKET_RESPONSE);
+                Peers.Add(new PeerConnection(this, Client));
 
                 // Invoke connection event handler
                 OnPeerConnected?.Invoke(Client, EventArgs.Empty);
+            }
+
+            // Unable to connect to peer
+            catch
+            {
+                // Raise error event
+                OnError?.Invoke("Unable to connect to peer " + Connection.Host + ":" + Connection.Port, EventArgs.Empty);
             }
         }
 
         // Broadcast data to all peers
         internal void Broadcast(byte[] Data)
         {
-            foreach (KeyValuePair<TcpClient, Thread> Peer in Peers)
-                Peer.Key.GetStream().Write(Data, 0, Data.Length);
+            // Send data to all peers
+            foreach (PeerConnection Peer in Peers) Peer.SendMessage(Data);
         }
-        public void Broadcast(UInt32 Command, byte[] Body, bool ResponseRequired)
+
+        // Send data to a specified peer
+        internal void SendMessage(PeerConnection Peer, byte[] Data)
         {
-            Context.BroadcastMessage(Command, Body, ResponseRequired);
+            // Send data to peer
+            Peer.SendMessage(Data);
         }
 
         // Closes all connections
@@ -193,38 +169,9 @@ namespace Canti.CryptoNote.P2P
             Listener.Stop();
 
             // Clear all collections
-            ConnectedPeers.Clear();
-            Peers.Clear();
             IncomingRequests.Clear();
+            OutgoingRequests.Clear();
+            Peers.Clear();
         }
-
-        
-
-        
-
-        /*void WriteHandshake(P2pMessage Message)
-        {
-            object coreSync = LevinProtocol.Decode(Message.Data, coreSync);
-            Command Command = Context.ReadCommand()
-
-            if (m_context.isIncoming())
-            {
-                // response
-                Commands.Handshake.Response res = new Commands.Handshake.Response();
-                res.NodeData = m_node.getNodeData();
-                res.PayloadData = coreSync;
-                res.LocalPeerList = m_node.getLocalPeerList();
-                m_context.writeMessage(makeReply(COMMAND_HANDSHAKE::ID, LevinProtocol::encode(res), LEVIN_PROTOCOL_RETCODE_SUCCESS));
-                m_node.tryPing(m_context);
-            }
-            else
-            {
-                // request
-                Commands.Handshake.Request req = new Commands.Handshake.Request();
-                req.NodeData = m_node.getNodeData();
-                req.PayloadData = coreSync;
-                m_context.writeMessage(makeRequest(COMMAND_HANDSHAKE::ID, LevinProtocol::encode(req)));
-            }
-        }*/
     }
 }

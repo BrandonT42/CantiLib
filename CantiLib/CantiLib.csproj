@@ -5,8 +5,4 @@
     <RootNamespace>Canti</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="CryptoNote\Globals\" />
-  </ItemGroup>
-
 </Project>
