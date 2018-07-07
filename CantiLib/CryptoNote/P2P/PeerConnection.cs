@@ -34,10 +34,17 @@ namespace Canti.CryptoNote.P2P
         }
 
         // Sends a message to the associated client
-        internal void SendMessage(byte[] Data)
+        internal bool SendMessage(byte[] Data)
         {
             // Send data to client stream
-            Client.GetStream().Write(Data);
+            try { Client.GetStream().Write(Data, 0, Data.Length); }
+
+            // Unable to send (connection was closed)
+            catch { return false; }
+
+            // Raise data sent event
+            Server.OnDataSent?.Invoke(new Packet(this, Data), EventArgs.Empty);
+            return true;
         }
 
         // Main logic thread
@@ -66,6 +73,24 @@ namespace Canti.CryptoNote.P2P
 
             // Close connection
             Client.Close();
+        }
+
+        // Checks if the peer is still connected
+        internal bool Connected
+        {
+            get
+            {
+                return Client.Connected;
+            }
+        }
+
+        // Returns connection information as a string
+        internal string Address
+        {
+            get
+            {
+                return Client.Client.RemoteEndPoint.ToString();
+            }
         }
     }
 }

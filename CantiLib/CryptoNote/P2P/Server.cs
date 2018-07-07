@@ -8,7 +8,6 @@ using System.Threading;
 // TODO:
 // - Handshake
 // - Prune old peers, check for disconnect
-// - Add OnCommandSent and OnDataSent events
 // - Fix Close not actually closing everything... Find where it's hanging up
 namespace Canti.CryptoNote.P2P
 {
@@ -24,7 +23,7 @@ namespace Canti.CryptoNote.P2P
         private Thread PeerConnectionThread;
 
         // Define data handling context
-        private LevinProtocol Context;
+        internal LevinProtocol Context;
 
         // Internal variables
         internal bool Running = true;
@@ -34,7 +33,7 @@ namespace Canti.CryptoNote.P2P
         public EventHandler OnDataReceived;
         public EventHandler OnDataSent;
         public EventHandler OnPeerConnected;
-        // public EventHandler OnPeerDisconnected;
+        public EventHandler OnPeerDisconnected;
 
         // Start server on specified port
         public void Start(Int32 Port)
@@ -73,10 +72,11 @@ namespace Canti.CryptoNote.P2P
                     Console.WriteLine("[Server] Received a peer connection from {0}", Client.Client.RemoteEndPoint);
 
                     // Add to peer list
-                    Peers.Add(new PeerConnection(this, Client));
+                    PeerConnection Peer = new PeerConnection(this, Client);
+                    Peers.Add(Peer);
 
                     // Invoke connection event handler
-                    OnPeerConnected?.Invoke(Client, EventArgs.Empty);
+                    OnPeerConnected?.Invoke(Peer, EventArgs.Empty);
                 }
 
                 // Let the thread sleep
@@ -131,10 +131,13 @@ namespace Canti.CryptoNote.P2P
             {
                 // Create a connection
                 TcpClient Client = new TcpClient(Connection.Host, Connection.Port);
-                Peers.Add(new PeerConnection(this, Client));
+
+                // Add to peer list
+                PeerConnection Peer = new PeerConnection(this, Client);
+                Peers.Add(Peer);
 
                 // Invoke connection event handler
-                OnPeerConnected?.Invoke(Client, EventArgs.Empty);
+                OnPeerConnected?.Invoke(Peer, EventArgs.Empty);
             }
 
             // Unable to connect to peer
@@ -153,10 +156,47 @@ namespace Canti.CryptoNote.P2P
         }
 
         // Send data to a specified peer
-        internal void SendMessage(PeerConnection Peer, byte[] Data)
+        internal bool SendMessage(PeerConnection Peer, byte[] Data)
         {
+            // Check if connection is alive
+            if (!Peer.Connected)
+            {
+                // Remove peer from peer list
+                Peers.Remove(Peer);
+
+                // Raise peer disconnected event
+                OnPeerDisconnected?.Invoke(Peer, EventArgs.Empty);
+                return false;
+            }
+
             // Send data to peer
-            Peer.SendMessage(Data);
+            return Peer.SendMessage(Data);
+        }
+
+        // Prunes disconnected peers from the peer list
+        internal void Prune()
+        {
+            // Create a new peer list
+            List<PeerConnection> PeerList = new List<PeerConnection>();
+
+            // Iterate through connected peers and add them to the list
+            foreach (PeerConnection Peer in Peers) PeerList.Add(Peer);
+
+            // Iterate through newly created list and remove disconnected peers from connected peer list
+            foreach (PeerConnection Peer in PeerList) if (!Peer.Connected) Peers.Remove(Peer);
+        }
+
+        // Returns a list of connected peers
+        internal List<PeerConnection> GetPeerList()
+        {
+            // Create a new peer list
+            List<PeerConnection> PeerList = new List<PeerConnection>();
+
+            // Iterate through connected peers and add them to the list
+            foreach (PeerConnection Peer in Peers) PeerList.Add(Peer);
+
+            // Return newly created list
+            return PeerList;
         }
 
         // Closes all connections

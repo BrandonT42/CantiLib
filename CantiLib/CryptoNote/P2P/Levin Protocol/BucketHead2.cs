@@ -5,14 +5,15 @@ using System.Text;
 namespace Canti.CryptoNote.P2P
 {
     // Header for levin protocol requests
-    internal struct BucketHead2
+    [Serializable]
+    internal struct bucket_head2
     {
-        internal ulong Signature { get; set; }
-        internal ulong PacketSize { get; set; }
-        internal bool ResponseRequired { get; set; }
-        internal uint CommandCode { get; set; }
-        internal int ReturnCode { get; set; }
-        internal uint Flags { get; set; }
-        internal uint ProtocolVersion { get; set; }
+        internal ulong m_signature { get; set; }
+        internal ulong m_cb { get; set; }
+        internal bool m_have_to_return_data { get; set; }
+        internal uint m_command { get; set; }
+        internal int m_return_code { get; set; }
+        internal uint m_flags { get; set; }
+        internal uint m_protocol_version { get; set; }
     };
 }

@@ -4,8 +4,8 @@ using System.Text;
 
 namespace Canti.CryptoNote.P2P
 {
-    internal class Globals
+    class Serialization
     {
-        internal const int P2P_COMMANDS_POOL_BASE = 1000;
+
     }
 }
