@@ -1,5 +1,7 @@
 ﻿using Canti.Data;
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace Canti.CryptoNote.P2P
 {
@@ -7,6 +9,9 @@ namespace Canti.CryptoNote.P2P
     {
         // Server connection
         private Server Connection;
+
+        // Peer read status (0 = head, 1 = body)
+        private Dictionary<PeerConnection, LevinPeer> Peers = new Dictionary<PeerConnection, LevinPeer>();
 
         // Entry point
         internal LevinProtocol(Server Connection)
@@ -17,29 +22,115 @@ namespace Canti.CryptoNote.P2P
             // Bind event handlers
             this.Connection.OnDataReceived += OnDataReceived;
             this.Connection.OnPeerConnected += OnPeerConnected;
+            this.Connection.OnPeerDisconnected += OnPeerDisconnected;
         }
 
         // Data received
         private void OnDataReceived(object sender, EventArgs e)
         {
-            // Decode command
+            // Get packet data
+            Packet Packet = (Packet)sender;
+            LevinPeer Peer = Peers[Packet.Peer];
 
+            // Read header
+            if (Peer.ReadStatus == PacketReadStatus.Head)
+            {
+                // Decode header
+                Peer.Header = BucketHead2.Deserialize(Packet.Data);
 
-            // Process command
+                // Set peer data
+                Peer.Data = Packet.Data;
 
+                // Debug
+                Console.WriteLine("Received header:");
+                Console.WriteLine(" - Signature: {0}", Peers[Packet.Peer].Header.Signature);
+                Console.WriteLine(" - Payload Size: {0}", Peers[Packet.Peer].Header.PayloadSize);
+                Console.WriteLine(" - Response Required: {0}", Peers[Packet.Peer].Header.ResponseRequired);
+                Console.WriteLine(" - Command Code: {0}", Peers[Packet.Peer].Header.CommandCode);
+                Console.WriteLine(" - Return Code: {0}", Peers[Packet.Peer].Header.ReturnCode);
+                Console.WriteLine(" - Flags: {0}", Peers[Packet.Peer].Header.Flags);
+                Console.WriteLine(" - Protocol Version: {0}", Peers[Packet.Peer].Header.ProtocolVersion);
 
-            // Send response if requested
+                // Check that signature matches
+                if (Peer.Header.Signature != LEVIN_SIGNATURE)
+                {
+                    Console.WriteLine("Signature mismatch, got {0}, expected {1}", Peers[Packet.Peer].Header.Signature, LEVIN_SIGNATURE);
+                    return; // TODO - throw error
+                }
 
+                // Check packet size
+                if (Peer.Header.PayloadSize > LEVIN_DEFAULT_MAX_PACKET_SIZE)
+                {
+                    Console.WriteLine("Packet size too big");
+                    return; // TODO - throw error
+                }
+
+                // Set new read status
+                if (Peer.Header.PayloadSize > 0) Peers[Packet.Peer].ReadStatus = PacketReadStatus.Body;
+            }
+
+            // Add data to peer buffer if reading message body
+            else
+            {
+                // Add bytes to peer buffer
+                byte[] NewData = new byte[Peer.Data.Length + Packet.Data.Length];
+                Buffer.BlockCopy(Peer.Data, 0, NewData, 0, Peer.Data.Length);
+                Buffer.BlockCopy(Packet.Data, 0, NewData, Peer.Data.Length, Packet.Data.Length);
+                Peer.Data = NewData;
+            }
+
+            Console.WriteLine("Need {0} data, have {1}", Peer.Header.PayloadSize, Peers[Packet.Peer].Data.Length);
+
+            // Check if data size matches payload size and that a header has been decoded
+            if (Peer.ReadStatus == PacketReadStatus.Body && (ulong)Peer.Data.Length >= Peer.Header.PayloadSize)
+            {
+                // Get header
+                BucketHead2 Header = Peer.Header;
+
+                // Decode command
+                Command Command = new Command
+                {
+                    CommandCode = Header.CommandCode,
+                    IsNotification = !Header.ResponseRequired,
+                    IsResponse = (Header.Flags & LEVIN_PACKET_RESPONSE) == LEVIN_PACKET_RESPONSE,
+                    Data = Encoding.SplitByteArray(Peers[Packet.Peer].Data, 33, (int)Peers[Packet.Peer].Header.PayloadSize)
+                };
+
+                // Debug
+                Console.WriteLine("Received command:");
+                Console.WriteLine(" - Command Code: {0}", Command.CommandCode);
+                Console.WriteLine(" - Is Notification: {0}", Command.IsNotification);
+                Console.WriteLine(" - Is Response: {0}", Command.IsResponse);
+                Console.WriteLine(" - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
+
+                // Send response
+                // TODO
+
+                // Set new read status and clear previous request
+                Peer.ReadStatus = PacketReadStatus.Head;
+                Peer.Header = default(BucketHead2);
+                Peer.Data = new byte[0];
+            }
         }
 
         // Peer connected
         private void OnPeerConnected(object sender, EventArgs e)
         {
-            // Send ping
+            // Get peer connection
+            PeerConnection Peer = (PeerConnection)sender;
 
-            // Await pong
+            // Add peer to peer list
+            Peers.Add(Peer, new LevinPeer());
+        }
 
-            // Send handhshake
+        // Peer disconnected
+        private void OnPeerDisconnected(object sender, EventArgs e)
+        {
+            // Get peer connections
+            PeerConnection Peer = (PeerConnection)sender;
+
+            // Remove peer from peer list
+            Peers.Remove(Peer);
         }
 
         // Notifies a peer with a command, no response expected

@@ -10,13 +10,13 @@ namespace Canti.CryptoNote.RPC
     {
         internal HttpRequestResult() { }
         [OptionalField]
-        internal MethodError error;
+        internal MethodError error = null;
         [OptionalField]
-        internal UInt32 height;
+        internal UInt32 height = 0;
         [OptionalField]
-        internal UInt32 network_height;
+        internal UInt32 network_height = 0;
         [OptionalField]
-        internal string status;
+        internal string status = null;
     }
 
     [Serializable]
@@ -24,13 +24,13 @@ namespace Canti.CryptoNote.RPC
     {
         internal RequestResult() { }
         [OptionalField]
-        internal string jsonrpc;
+        internal string jsonrpc = null;
         [OptionalField]
-        internal string id;
+        internal string id = null;
         [OptionalField]
-        internal MethodResult result;
+        internal MethodResult result = null;
         [OptionalField]
-        internal MethodError error;
+        internal MethodError error = null;
     }
 
     [Serializable]
@@ -38,45 +38,45 @@ namespace Canti.CryptoNote.RPC
     {
         internal MethodResult() { }
         [OptionalField]
-        internal string viewSecretKey;
+        internal string viewSecretKey = null;
         [OptionalField]
-        internal string spendSecretKey;
+        internal string spendSecretKey = null;
         [OptionalField]
-        internal string spendPublicKey;
+        internal string spendPublicKey = null;
         [OptionalField]
-        internal UInt32 blockCount;
+        internal UInt32 blockCount = 0;
         [OptionalField]
-        internal UInt32 knownBlockCount;
+        internal UInt32 knownBlockCount = 0;
         [OptionalField]
-        internal string lastBlockHash;
+        internal string lastBlockHash = null;
         [OptionalField]
-        internal UInt32 peerCount;
+        internal UInt32 peerCount = 0;
         [OptionalField]
-        internal string[] addresses;
+        internal string[] addresses = null;
         [OptionalField]
-        internal string address;
+        internal string address = null;
         [OptionalField]
-        internal UInt64 availableBalance;
+        internal UInt64 availableBalance = 0;
         [OptionalField]
-        internal UInt64 lockedAmount;
+        internal UInt64 lockedAmount = 0;
         [OptionalField]
-        internal string[] blockHashes;
+        internal string[] blockHashes = null;
         [OptionalField]
-        internal List<MethodResultItems> items;
+        internal List<MethodResultItems> items = null;
         [OptionalField]
-        internal string[] transactionHashes;
+        internal string[] transactionHashes = null;
         [OptionalField]
-        internal MethodResultTransaction transaction;
+        internal MethodResultTransaction transaction = null;
         [OptionalField]
-        internal string transactionHash;
+        internal string transactionHash = null;
         [OptionalField]
-        internal UInt64 totalOutputCount;
+        internal UInt64 totalOutputCount = 0;
         [OptionalField]
-        internal UInt64 fusionReadyCount;
+        internal UInt64 fusionReadyCount = 0;
         [OptionalField]
-        internal UInt32 count;
+        internal UInt32 count = 0;
         [OptionalField]
-        internal string status;
+        internal string status = null;
     }
 
     [Serializable]
@@ -84,11 +84,11 @@ namespace Canti.CryptoNote.RPC
     {
         internal MethodError() { }
         [OptionalField]
-        internal string message;
+        internal string message = null;
         [OptionalField]
-        internal string code;
+        internal string code = null;
         [OptionalField]
-        internal object data;
+        internal object data = null;
     }
 
     [Serializable]
@@ -96,11 +96,11 @@ namespace Canti.CryptoNote.RPC
     {
         internal MethodResultItems() { }
         [OptionalField]
-        internal string[] transactionHashes;
+        internal string[] transactionHashes = null;
         [OptionalField]
-        internal string blockHash;
+        internal string blockHash = null;
         [OptionalField]
-        internal List<MethodResultTransaction> transactions;
+        internal List<MethodResultTransaction> transactions = null;
     }
 
     [Serializable]
@@ -108,25 +108,25 @@ namespace Canti.CryptoNote.RPC
     {
         internal MethodResultTransaction() { }
         [OptionalField]
-        internal string transactionHash;
+        internal string transactionHash = null;
         [OptionalField]
-        internal UInt32 blockIndex;
+        internal UInt32 blockIndex = 0;
         [OptionalField]
-        internal UInt64 timestamp;
+        internal UInt64 timestamp = 0;
         [OptionalField]
-        internal bool isBase;
+        internal bool isBase = false;
         [OptionalField]
-        internal UInt64 unlockTime;
+        internal UInt64 unlockTime = 0;
         [OptionalField]
-        internal Int64 amount;
+        internal Int64 amount = 0;
         [OptionalField]
-        internal UInt64 fee;
+        internal UInt64 fee = 0;
         [OptionalField]
-        internal string extra;
+        internal string extra = null;
         [OptionalField]
-        internal string paymentId;
+        internal string paymentId = null;
         [OptionalField]
-        internal List<MethodResultTransfer> transfers;
+        internal List<MethodResultTransfer> transfers = null;
     }
 
     [Serializable]
@@ -134,8 +134,8 @@ namespace Canti.CryptoNote.RPC
     {
         internal MethodResultTransfer() { }
         [OptionalField]
-        internal string address;
+        internal string address = null;
         [OptionalField]
-        internal Int64 amount;
+        internal Int64 amount = 0;
     }
 }

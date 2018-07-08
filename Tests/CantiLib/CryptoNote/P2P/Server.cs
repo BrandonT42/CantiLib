@@ -6,8 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 
 // TODO:
-// - Handshake
-// - Prune old peers, check for disconnect
+// - Prune old peers periodically
 // - Fix Close not actually closing everything... Find where it's hanging up
 namespace Canti.CryptoNote.P2P
 {

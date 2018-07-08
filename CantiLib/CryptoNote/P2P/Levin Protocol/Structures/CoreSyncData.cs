@@ -4,8 +4,9 @@ using System.Text;
 
 namespace Canti.CryptoNote.P2P
 {
-    class Serialization
+    internal class CoreSyncData
     {
-
+        internal uint CurrentHeight;
+        internal string TopId;
     }
 }

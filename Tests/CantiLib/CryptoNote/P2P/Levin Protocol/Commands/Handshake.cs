@@ -4,10 +4,10 @@ using System.Text;
 
 namespace Canti.CryptoNote.P2P.Commands
 {
-    internal class CommandPing
+    internal class CommandHandshake
     {
         // Command ID
-        internal const int Id = Globals.P2P_COMMANDS_POOL_BASE + 3;
+        internal const int Id = Globals.P2P_COMMANDS_POOL_BASE + 1;
 
         // Outgoing request structure
         internal struct Request : ICommandRequestBase
@@ -15,7 +15,7 @@ namespace Canti.CryptoNote.P2P.Commands
             // Serializes request data into a byte array
             public byte[] Serialize()
             {
-                // No data is needed for this request
+                
                 return new byte[0];
             }
         }
@@ -24,8 +24,9 @@ namespace Canti.CryptoNote.P2P.Commands
         internal struct Response : ICommandResponseBase<Response>
         {
             // Variables
-            internal string Status;
-            internal ulong PeerId;
+            internal NodeData NodeData { get; set; }
+            internal CoreSyncData Data { get; set; }
+            internal List<PeerlistEntry> LocalPeerlistNew { get; set; }
 
             // Deseriaizes response data
             public Response Deserialize(byte[] Data)
@@ -36,8 +37,7 @@ namespace Canti.CryptoNote.P2P.Commands
                 // Populate and return new response
                 return new Response
                 {
-                    Status = "OK",
-                    PeerId = 0
+                    
                 };
             }
         }

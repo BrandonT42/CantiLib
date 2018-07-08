@@ -1,0 +1,120 @@
+﻿using Canti.Data;
+using System;
+
+namespace Canti.CryptoNote.P2P
+{
+    // Header for levin protocol requests
+    [Serializable]
+    internal struct BucketHead2
+    {
+        // Header variables (names should be self explanatory)
+        internal ulong Signature { get; set; }
+        internal ulong PayloadSize { get; set; }
+        internal bool ResponseRequired { get; set; }
+        internal uint CommandCode { get; set; }
+        internal int ReturnCode { get; set; }
+        internal uint Flags { get; set; }
+        internal uint ProtocolVersion { get; set; }
+
+        // Serializes the header information into a byte array
+        internal byte[] Serialize()
+        {
+            // Create output array
+            byte[] Output = new byte[33];
+            int Offset = 0;
+
+            // Add signature bytes
+            byte[] CurrentBytes = Encoding.UlongToByteArray(Signature);
+            Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
+            Offset += CurrentBytes.Length;
+
+            // Add payload size bytes
+            CurrentBytes = Encoding.UlongToByteArray(PayloadSize);
+            Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
+            Offset += CurrentBytes.Length;
+
+            // Add response required bytes
+            CurrentBytes = new byte[] { Convert.ToByte(ResponseRequired) };
+            Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
+            Offset += CurrentBytes.Length;
+
+            // Add command code bytes
+            CurrentBytes = Encoding.IntToByteArray((int)CommandCode);
+            Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
+            Offset += CurrentBytes.Length;
+
+            // Add return code bytes
+            CurrentBytes = Encoding.IntToByteArray(ReturnCode);
+            Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
+            Offset += CurrentBytes.Length;
+
+            // Add flags bytes
+            CurrentBytes = Encoding.IntToByteArray((int)Flags);
+            Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
+            Offset += CurrentBytes.Length;
+
+            // Add protocol version bytes
+            CurrentBytes = Encoding.IntToByteArray((int)ProtocolVersion);
+            Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
+            Offset += CurrentBytes.Length;
+
+            // Return output array
+            return Output;
+        }
+
+        // Deserializes the header information from a byte array
+        internal static BucketHead2 Deserialize(byte[] Data)
+        {
+            try
+            {
+                // Create a header object
+                BucketHead2 Head = new BucketHead2();
+
+                // Create a working byte array
+                byte[] CurrentBytes = new byte[0];
+
+                // Decode signature
+                CurrentBytes = new byte[8];
+                Buffer.BlockCopy(Data, 0, CurrentBytes, 0, CurrentBytes.Length);
+                Head.Signature = Encoding.ByteArrayToUlong(CurrentBytes);
+
+                // Decode payload size
+                CurrentBytes = new byte[8];
+                Buffer.BlockCopy(Data, 8, CurrentBytes, 0, CurrentBytes.Length);
+                Head.PayloadSize = Encoding.ByteArrayToUlong(CurrentBytes);
+
+                // Decode response required
+                CurrentBytes = new byte[1];
+                Buffer.BlockCopy(Data, 16, CurrentBytes, 0, CurrentBytes.Length);
+                Head.ResponseRequired = Convert.ToBoolean(CurrentBytes[0]);
+
+                // Decode command code
+                CurrentBytes = new byte[4];
+                Buffer.BlockCopy(Data, 17, CurrentBytes, 0, CurrentBytes.Length);
+                Head.CommandCode = (uint)Encoding.ByteArrayToInt(CurrentBytes);
+
+                // Decode return code
+                CurrentBytes = new byte[4];
+                Buffer.BlockCopy(Data, 21, CurrentBytes, 0, CurrentBytes.Length);
+                Head.ReturnCode = Encoding.ByteArrayToInt(CurrentBytes);
+
+                // Decode flags
+                CurrentBytes = new byte[4];
+                Buffer.BlockCopy(Data, 25, CurrentBytes, 0, CurrentBytes.Length);
+                Head.Flags = (uint)Encoding.ByteArrayToInt(CurrentBytes);
+
+                // Decode protocol version
+                CurrentBytes = new byte[4];
+                Buffer.BlockCopy(Data, 29, CurrentBytes, 0, CurrentBytes.Length);
+                Head.ProtocolVersion = (uint)Encoding.ByteArrayToInt(CurrentBytes);
+
+                // Return header object
+                return Head;
+            }
+            catch
+            {
+                return default(BucketHead2);
+            }
+        }
+    };
+}

@@ -1,9 +1,9 @@
 ﻿using Canti.Utilities;
 using Canti.Data;
-using System;
-using System.Net.Sockets;
 using Canti.CryptoNote.P2P;
+using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Canti.Tests
 {
@@ -64,7 +64,7 @@ namespace Canti.Tests
 
             // Start server
             Server.Start(Port);
-            Logger.Log(Level.INFO, "Server started on port {0}", Port);
+            Logger.Log(Level.INFO, "Server started on port {0}, signature of {1} (Encoded and decoded: {2})", Port, LevinProtocol.LEVIN_SIGNATURE, (long)Encoding.ByteArrayToUlong(Encoding.UlongToByteArray(LevinProtocol.LEVIN_SIGNATURE)));
 
             // Enter into a loop
             int MenuSelection = 0;
@@ -84,7 +84,7 @@ namespace Canti.Tests
                 // Broadcast a test packet
                 else if (MenuSelection == 2)
                 {
-                    Server.Context.NotifyAll(Canti.CryptoNote.P2P.Commands.CommandPing.Id, new byte[0]);
+                    Server.Context.NotifyAll(CryptoNote.P2P.Commands.CommandPing.Id, new byte[0]);
                 }
 
                 // Show peer list

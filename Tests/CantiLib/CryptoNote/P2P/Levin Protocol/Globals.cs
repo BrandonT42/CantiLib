@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Canti.Data;
+using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Canti.CryptoNote.P2P
 {
@@ -8,7 +8,7 @@ namespace Canti.CryptoNote.P2P
     internal partial class LevinProtocol
     {
         // Network settings
-        internal const long LEVIN_SIGNATURE = 0x0101010101012101;
+        internal const ulong LEVIN_SIGNATURE = 0x0101010101012101UL;
         internal const int LEVIN_DEFAULT_TIMEOUT_PRECONFIGURED = 0;
         internal const int LEVIN_DEFAULT_MAX_PACKET_SIZE = 100000000; //100MB by default
 
