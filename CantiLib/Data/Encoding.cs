@@ -103,6 +103,16 @@ namespace Canti.Data
             return (Input[3] << 24) | (Input[2] << 16) | (Input[1] << 8) | Input[0];
         }
 
+        public static byte[] UlongToByteArray(ulong Input)
+        {
+            byte[] Buffer = new byte[4];
+            Buffer[0] = (byte)Input;
+            Buffer[1] = (byte)(((uint)Input >> 8) & 0xFF);
+            Buffer[2] = (byte)(((uint)Input >> 16) & 0xFF);
+            Buffer[3] = (byte)(((uint)Input >> 24) & 0xFF);
+            return Buffer;
+        }
+
         /// <summary>
         /// Converts a byte array to a hex string
         /// </summary>

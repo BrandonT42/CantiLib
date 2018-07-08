@@ -15,7 +15,7 @@ namespace Canti.CryptoNote.P2P.Commands
             // Serializes request data into a byte array
             public byte[] Serialize()
             {
-                // Not implemented yet
+                // No data is needed for this request
                 return new byte[0];
             }
         }

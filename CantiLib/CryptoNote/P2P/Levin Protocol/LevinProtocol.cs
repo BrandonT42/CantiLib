@@ -24,9 +24,12 @@ namespace Canti.CryptoNote.P2P
         {
             // Decode command
 
+
             // Process command
 
+
             // Send response if requested
+
         }
 
         // Peer connected
@@ -43,18 +46,18 @@ namespace Canti.CryptoNote.P2P
         internal void Notify(PeerConnection Peer, int CommandCode, byte[] Data)
         {
             // Form message header
-            bucket_head2 head = new bucket_head2
+            BucketHead2 Header = new BucketHead2
             {
-                m_signature =         LEVIN_SIGNATURE,
-                m_have_to_return_data =  false,
-                m_cb =        (ulong)Data.Length,
-                m_command =       (uint)CommandCode,
-                m_protocol_version =   LEVIN_PROTOCOL_VER_1,
-                m_flags =             LEVIN_PACKET_REQUEST
+                Signature =         LEVIN_SIGNATURE,
+                ResponseRequired =  false,
+                PayloadSize =        (ulong)Data.Length,
+                CommandCode =       (uint)CommandCode,
+                ProtocolVersion =   LEVIN_PROTOCOL_VER_1,
+                Flags =             LEVIN_PACKET_REQUEST
             };
 
             // Send header packet
-            if (Connection.SendMessage(Peer, Encoding.ObjectToByteArray(head)))
+            if (Connection.SendMessage(Peer, Header.Serialize()))
             {
                 // Send body packet
                 Connection.SendMessage(Peer, Data);
@@ -65,18 +68,18 @@ namespace Canti.CryptoNote.P2P
         internal void NotifyAll(int CommandCode, byte[] Data)
         {
             // Form message header
-            bucket_head2 head = new bucket_head2
+            BucketHead2 Header = new BucketHead2
             {
-                m_signature = LEVIN_SIGNATURE,
-                m_have_to_return_data = false,
-                m_cb = (ulong)Data.Length,
-                m_command = (uint)CommandCode,
-                m_protocol_version = LEVIN_PROTOCOL_VER_1,
-                m_flags = LEVIN_PACKET_REQUEST
+                Signature =         LEVIN_SIGNATURE,
+                ResponseRequired =  false,
+                PayloadSize =        (ulong)Data.Length,
+                CommandCode =       (uint)CommandCode,
+                ProtocolVersion =   LEVIN_PROTOCOL_VER_1,
+                Flags =             LEVIN_PACKET_REQUEST
             };
 
             // Send header packet
-            Connection.Broadcast(Encoding.ObjectToByteArray(head));
+            Connection.Broadcast(Header.Serialize());
             
             // Send body packet
             Connection.Broadcast(Data);

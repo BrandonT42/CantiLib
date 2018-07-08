@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using Canti.CryptoNote.P2P;
 using System.Collections.Generic;
 
-namespace BlockchainTest
+namespace Canti.Tests
 {
     class Program
     {
