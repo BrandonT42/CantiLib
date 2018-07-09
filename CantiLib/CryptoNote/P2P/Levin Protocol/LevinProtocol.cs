@@ -102,6 +102,11 @@ namespace Canti.CryptoNote.P2P
                 Console.WriteLine(" - Is Notification: {0}", Command.IsNotification);
                 Console.WriteLine(" - Is Response: {0}", Command.IsResponse);
                 Console.WriteLine(" - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
+                //byte[] Decompressed = Encoding.DecompressByteArray(Command.Data);
+                //Console.WriteLine(" - Decompressed data: {0}", Decompressed);
+                Console.WriteLine("Attempting to parse to request...");
+                //Commands.CommandHandshake.Response Response = new Commands.CommandHandshake.Response();
+                //Response = Response.Deserialize(Command.Data);
 
                 // Send response
                 // TODO
@@ -139,12 +144,12 @@ namespace Canti.CryptoNote.P2P
             // Form message header
             BucketHead2 Header = new BucketHead2
             {
-                Signature =         LEVIN_SIGNATURE,
-                ResponseRequired =  false,
-                PayloadSize =        (ulong)Data.Length,
-                CommandCode =       (uint)CommandCode,
-                ProtocolVersion =   LEVIN_PROTOCOL_VER_1,
-                Flags =             LEVIN_PACKET_REQUEST
+                Signature = LEVIN_SIGNATURE,
+                ResponseRequired = false,
+                PayloadSize = (ulong)Data.Length,
+                CommandCode = (uint)CommandCode,
+                ProtocolVersion = LEVIN_PROTOCOL_VER_1,
+                Flags = LEVIN_PACKET_REQUEST
             };
 
             // Send header packet
@@ -163,7 +168,7 @@ namespace Canti.CryptoNote.P2P
             {
                 Signature =         LEVIN_SIGNATURE,
                 ResponseRequired =  false,
-                PayloadSize =        (ulong)Data.Length,
+                PayloadSize =       (ulong)Data.Length,
                 CommandCode =       (uint)CommandCode,
                 ProtocolVersion =   LEVIN_PROTOCOL_VER_1,
                 Flags =             LEVIN_PACKET_REQUEST
@@ -172,6 +177,74 @@ namespace Canti.CryptoNote.P2P
             // Send header packet
             Connection.Broadcast(Header.Serialize());
             
+            // Send body packet
+            Connection.Broadcast(Data);
+        }
+
+        // Notifies a peer with a command, no response expected
+        internal void Reply(PeerConnection Peer, int CommandCode, byte[] Data)
+        {
+            // Form message header
+            BucketHead2 Header = new BucketHead2
+            {
+                Signature = LEVIN_SIGNATURE,
+                ResponseRequired = false,
+                PayloadSize = (ulong)Data.Length,
+                CommandCode = (uint)CommandCode,
+                ProtocolVersion = LEVIN_PROTOCOL_VER_1,
+                Flags = LEVIN_PACKET_RESPONSE
+            };
+
+            // Send header packet
+            if (Connection.SendMessage(Peer, Header.Serialize()))
+            {
+                // Send body packet
+                Connection.SendMessage(Peer, Data);
+            }
+        }
+
+        // Notifies all peers with a command, no response expected
+        internal void SendMessageAll(int CommandCode, byte[] Data)
+        {
+            // Form message header
+            BucketHead2 Header = new BucketHead2
+            {
+                Signature = LEVIN_SIGNATURE,
+                ResponseRequired = true,
+                PayloadSize = (ulong)Data.Length,
+                CommandCode = (uint)CommandCode,
+                ProtocolVersion = LEVIN_PROTOCOL_VER_1,
+                Flags = LEVIN_PACKET_REQUEST
+            };
+
+            // Debug
+            Console.WriteLine("Sending header:");
+            Console.WriteLine(" - Signature: {0}", Header.Signature);
+            Console.WriteLine(" - Payload Size: {0}", Header.PayloadSize);
+            Console.WriteLine(" - Response Required: {0}", Header.ResponseRequired);
+            Console.WriteLine(" - Command Code: {0}", Header.CommandCode);
+            Console.WriteLine(" - Return Code: {0}", Header.ReturnCode);
+            Console.WriteLine(" - Flags: {0}", Header.Flags);
+            Console.WriteLine(" - Protocol Version: {0}", Header.ProtocolVersion);
+
+            Command Command = new Command
+            {
+                CommandCode = Header.CommandCode,
+                IsNotification = !Header.ResponseRequired,
+                IsResponse = (Header.Flags & LEVIN_PACKET_RESPONSE) == LEVIN_PACKET_RESPONSE,
+                Data = Data
+            };
+
+            // Debug
+            Console.WriteLine("Sending command:");
+            Console.WriteLine(" - Command Code: {0}", Command.CommandCode);
+            Console.WriteLine(" - Is Notification: {0}", Command.IsNotification);
+            Console.WriteLine(" - Is Response: {0}", Command.IsResponse);
+            Console.WriteLine(" - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
+
+            // Send header packet
+            Connection.Broadcast(Header.Serialize());
+
             // Send body packet
             Connection.Broadcast(Data);
         }

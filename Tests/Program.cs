@@ -84,7 +84,31 @@ namespace Canti.Tests
                 // Broadcast a test packet
                 else if (MenuSelection == 2)
                 {
-                    Server.Context.NotifyAll(CryptoNote.P2P.Commands.CommandPing.Id, new byte[0]);
+                    //Server.Context.NotifyAll(CryptoNote.P2P.Commands.CommandPing.Id, new byte[0]);
+
+                    // Create a response
+                    CryptoNote.P2P.Commands.CommandHandshake.Request Request = new CryptoNote.P2P.Commands.CommandHandshake.Request
+                    {
+                        NodeData = new NodeData()
+                        {
+                            NetworkId = CryptoNote.P2P.Globals.NETWORK_ID,
+                            Version = 1,
+                            Port = 8090,
+                            LocalTime = (ulong)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds,
+                            PeerId = BitConverter.ToUInt64(new byte[] { 0x58, 0xfd, 0xde, 0xb8, 0xa4, 0x54, 0x6f, 0xf4 })
+                        },
+                        PayloadData = new CoreSyncData()
+                        {
+                            CurrentHeight = 605077,
+                            TopId = Encoding.HexStringToString("dd3cc6212ba718412dd17bdba50564f6dc02ed05f81fe9b5a99e0eb0c35d72a0")
+                        }
+                    };
+
+                    // Get body bytes
+                    byte[] BodyBytes = Request.Serialize();
+
+                    // Send notification
+                    Server.Context.SendMessageAll(CryptoNote.P2P.Commands.CommandHandshake.Id, BodyBytes);
                 }
 
                 // Show peer list

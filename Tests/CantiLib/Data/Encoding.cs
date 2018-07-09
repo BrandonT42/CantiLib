@@ -62,6 +62,21 @@ namespace Canti.Data
                 return Binary.Deserialize(Stream);
             }
         }
+
+        public static byte[] StringToByteArray(string Input)
+        {
+            return System.Text.Encoding.ASCII.GetBytes(Input);
+        }
+
+        public static string ByteArrayToString(byte[] Input)
+        {
+            return System.Text.Encoding.ASCII.GetString(Input);
+        }
+
+        public static string HexStringToString(string Input)
+        {
+            return ByteArrayToString(HexStringToByteArray(Input));
+        }
         #endregion
 
         #region Integers
@@ -103,6 +118,15 @@ namespace Canti.Data
             Buffer[1] = (byte)(((uint)Input >> 8) & 0xFF);
             Buffer[2] = (byte)(((uint)Input >> 16) & 0xFF);
             Buffer[3] = (byte)(((uint)Input >> 24) & 0xFF);
+            return Buffer;
+        }
+        public static byte[] UintToByteArray(uint Input)
+        {
+            byte[] Buffer = new byte[4];
+            Buffer[0] = (byte)Input;
+            Buffer[1] = (byte)((Input >> 8) & 0xFF);
+            Buffer[2] = (byte)((Input >> 16) & 0xFF);
+            Buffer[3] = (byte)((Input >> 24) & 0xFF);
             return Buffer;
         }
         public static byte[] UlongToByteArray(ulong Input)
@@ -206,6 +230,14 @@ namespace Canti.Data
             byte[] Output = new byte[Length];
             Buffer.BlockCopy(Source, Offset, Output, 0, Length);
             return Output;
+        }
+
+        public static byte[] AppendToByteArray(byte[] Source, byte[] Destination)
+        {
+            byte[] NewBytes = new byte[Source.Length + Destination.Length];
+            Buffer.BlockCopy(Destination, 0, NewBytes, 0, Destination.Length);
+            Buffer.BlockCopy(Source, 0, NewBytes, Destination.Length, Source.Length);
+            return NewBytes;
         }
         #endregion
 

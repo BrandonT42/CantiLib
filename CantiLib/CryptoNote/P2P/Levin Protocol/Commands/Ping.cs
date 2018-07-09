@@ -24,8 +24,8 @@ namespace Canti.CryptoNote.P2P.Commands
         internal struct Response : ICommandResponseBase<Response>
         {
             // Variables
-            internal string Status;
-            internal ulong PeerId;
+            internal string Status { get; set; }
+            internal ulong PeerId { get; set; }
 
             // Deseriaizes response data
             public Response Deserialize(byte[] Data)
