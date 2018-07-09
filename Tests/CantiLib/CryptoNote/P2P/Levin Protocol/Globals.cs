@@ -7,12 +7,7 @@ namespace Canti.CryptoNote.P2P
     // Global levin protocol constants
     internal partial class LevinProtocol
     {
-        // Network settings
-        internal const ulong LEVIN_SIGNATURE = 0x0101010101012101UL;
-        internal const int LEVIN_DEFAULT_TIMEOUT_PRECONFIGURED = 0;
-        internal const int LEVIN_DEFAULT_MAX_PACKET_SIZE = 100000000; //100MB by default
-
-        // Misc variables
+        // Packet flags
         internal const int LEVIN_PACKET_REQUEST = 0x00000001;
         internal const int LEVIN_PACKET_RESPONSE = 0x00000002;
 

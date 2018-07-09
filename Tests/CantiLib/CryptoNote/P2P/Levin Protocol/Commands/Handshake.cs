@@ -7,7 +7,7 @@ namespace Canti.CryptoNote.P2P.Commands
     internal class CommandHandshake
     {
         // Command ID
-        internal const int Id = Globals.P2P_COMMANDS_POOL_BASE + 1;
+        internal const int Id = GlobalsConfig.P2P_COMMANDS_POOL_BASE + 1;
 
         // Outgoing request structure
         internal struct Request : ICommandRequestBase

@@ -55,8 +55,11 @@ namespace Canti.Tests
             // Set log level and start logger
             Logger.LogLevel = Level.DEBUG;
             Logger.Start();
+
+            // Add logger to server
+            Server.Logger = Logger;
             
-            // CBind event handlers
+            // Bind event handlers
             Server.OnDataReceived += DataReceived;
             Server.OnDataSent += DataSent;
             Server.OnError += ServerError;
@@ -64,7 +67,7 @@ namespace Canti.Tests
 
             // Start server
             Server.Start(Port);
-            Logger.Log(Level.INFO, "Server started on port {0}, signature of {1} (Encoded and decoded: {2})", Port, LevinProtocol.LEVIN_SIGNATURE, (long)Encoding.ByteArrayToUlong(Encoding.UlongToByteArray(LevinProtocol.LEVIN_SIGNATURE)));
+            Logger.Log(Level.INFO, "Server started on port {0}", Server.Port);
 
             // Enter into a loop
             int MenuSelection = 0;
@@ -84,14 +87,12 @@ namespace Canti.Tests
                 // Broadcast a test packet
                 else if (MenuSelection == 2)
                 {
-                    //Server.Context.NotifyAll(CryptoNote.P2P.Commands.CommandPing.Id, new byte[0]);
-
                     // Create a response
                     CryptoNote.P2P.Commands.CommandHandshake.Request Request = new CryptoNote.P2P.Commands.CommandHandshake.Request
                     {
                         NodeData = new NodeData()
                         {
-                            NetworkId = CryptoNote.P2P.Globals.NETWORK_ID,
+                            NetworkId = CryptoNote.GlobalsConfig.P2P_NETWORK_ID,
                             Version = 1,
                             Port = 8090,
                             LocalTime = (ulong)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds,

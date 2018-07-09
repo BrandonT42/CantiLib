@@ -52,14 +52,14 @@ namespace Canti.CryptoNote.P2P
                 Console.WriteLine(" - Protocol Version: {0}", Peers[Packet.Peer].Header.ProtocolVersion);
 
                 // Check that signature matches
-                if (Peer.Header.Signature != LEVIN_SIGNATURE)
+                if (Peer.Header.Signature != GlobalsConfig.LEVIN_SIGNATURE)
                 {
-                    Console.WriteLine("Signature mismatch, got {0}, expected {1}", Peers[Packet.Peer].Header.Signature, LEVIN_SIGNATURE);
+                    Console.WriteLine("Signature mismatch, got {0}, expected {1}", Peers[Packet.Peer].Header.Signature, GlobalsConfig.LEVIN_SIGNATURE);
                     return; // TODO - throw error
                 }
 
                 // Check packet size
-                if (Peer.Header.PayloadSize > LEVIN_DEFAULT_MAX_PACKET_SIZE)
+                if (Peer.Header.PayloadSize > GlobalsConfig.LEVIN_MAX_PACKET_SIZE)
                 {
                     Console.WriteLine("Packet size too big");
                     return; // TODO - throw error
@@ -78,8 +78,6 @@ namespace Canti.CryptoNote.P2P
                 Buffer.BlockCopy(Packet.Data, 0, NewData, Peer.Data.Length, Packet.Data.Length);
                 Peer.Data = NewData;
             }
-
-            Console.WriteLine("Need {0} data, have {1}", Peer.Header.PayloadSize, Peers[Packet.Peer].Data.Length);
 
             // Check if data size matches payload size and that a header has been decoded
             if (Peer.ReadStatus == PacketReadStatus.Body && (ulong)Peer.Data.Length >= Peer.Header.PayloadSize)
@@ -102,11 +100,10 @@ namespace Canti.CryptoNote.P2P
                 Console.WriteLine(" - Is Notification: {0}", Command.IsNotification);
                 Console.WriteLine(" - Is Response: {0}", Command.IsResponse);
                 Console.WriteLine(" - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
-                //byte[] Decompressed = Encoding.DecompressByteArray(Command.Data);
-                //Console.WriteLine(" - Decompressed data: {0}", Decompressed);
-                Console.WriteLine("Attempting to parse to request...");
-                //Commands.CommandHandshake.Response Response = new Commands.CommandHandshake.Response();
-                //Response = Response.Deserialize(Command.Data);
+                
+                // Deserialize response
+                Commands.CommandHandshake.Response Response = new Commands.CommandHandshake.Response();
+                Response = Response.Deserialize(Command.Data);
 
                 // Send response
                 // TODO
@@ -144,7 +141,7 @@ namespace Canti.CryptoNote.P2P
             // Form message header
             BucketHead2 Header = new BucketHead2
             {
-                Signature = LEVIN_SIGNATURE,
+                Signature = GlobalsConfig.LEVIN_SIGNATURE,
                 ResponseRequired = false,
                 PayloadSize = (ulong)Data.Length,
                 CommandCode = (uint)CommandCode,
@@ -166,7 +163,7 @@ namespace Canti.CryptoNote.P2P
             // Form message header
             BucketHead2 Header = new BucketHead2
             {
-                Signature =         LEVIN_SIGNATURE,
+                Signature = GlobalsConfig.LEVIN_SIGNATURE,
                 ResponseRequired =  false,
                 PayloadSize =       (ulong)Data.Length,
                 CommandCode =       (uint)CommandCode,
@@ -187,7 +184,7 @@ namespace Canti.CryptoNote.P2P
             // Form message header
             BucketHead2 Header = new BucketHead2
             {
-                Signature = LEVIN_SIGNATURE,
+                Signature = GlobalsConfig.LEVIN_SIGNATURE,
                 ResponseRequired = false,
                 PayloadSize = (ulong)Data.Length,
                 CommandCode = (uint)CommandCode,
@@ -209,7 +206,7 @@ namespace Canti.CryptoNote.P2P
             // Form message header
             BucketHead2 Header = new BucketHead2
             {
-                Signature = LEVIN_SIGNATURE,
+                Signature = GlobalsConfig.LEVIN_SIGNATURE,
                 ResponseRequired = true,
                 PayloadSize = (ulong)Data.Length,
                 CommandCode = (uint)CommandCode,
@@ -243,10 +240,11 @@ namespace Canti.CryptoNote.P2P
             Console.WriteLine(" - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
 
             // Send header packet
-            Connection.Broadcast(Header.Serialize());
+            //Connection.Broadcast(Header.Serialize());
 
             // Send body packet
-            Connection.Broadcast(Data);
+            //Connection.Broadcast(Data);
+            Connection.Broadcast(Encoding.AppendToByteArray(Data, Header.Serialize()));
         }
 
         // Encodes a command and returns the raw bytes
