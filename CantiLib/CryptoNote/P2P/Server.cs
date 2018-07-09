@@ -25,7 +25,9 @@ namespace Canti.CryptoNote.P2P
         internal LevinProtocol Context;
 
         // Internal variables
+        internal Logger Logger;
         internal bool Running = true;
+        internal int Port = 0;
 
         // Event handlers
         public EventHandler OnError;
@@ -35,7 +37,7 @@ namespace Canti.CryptoNote.P2P
         public EventHandler OnPeerDisconnected;
 
         // Start server on specified port
-        public void Start(Int32 Port)
+        public void Start(int Port = GlobalsConfig.P2P_DEFAULT_PORT)
         {
             // Create a new TCP listener and start listening
             Listener = new TcpListener(IPAddress.Parse("127.0.0.1"), Port);
@@ -73,6 +75,9 @@ namespace Canti.CryptoNote.P2P
                     // Add to peer list
                     PeerConnection Peer = new PeerConnection(this, Client);
                     Peers.Add(Peer);
+
+                    // Log connection to console
+                    Logger?.Log(Level.DEBUG, "Peer connection formed with {0}", Peer.Address);
 
                     // Invoke connection event handler
                     OnPeerConnected?.Invoke(Peer, EventArgs.Empty);
@@ -135,6 +140,9 @@ namespace Canti.CryptoNote.P2P
                 PeerConnection Peer = new PeerConnection(this, Client);
                 Peers.Add(Peer);
 
+                // Log connection to console
+                Logger?.Log(Level.DEBUG, "Peer connection formed with {0}", Peer.Address);
+
                 // Invoke connection event handler
                 OnPeerConnected?.Invoke(Peer, EventArgs.Empty);
             }
@@ -142,6 +150,9 @@ namespace Canti.CryptoNote.P2P
             // Unable to connect to peer
             catch
             {
+                // Log error to console
+                Logger?.Log(Level.ERROR, "Peer connection could not be formed with {0}:{1}", Connection.Host, Connection.Port);
+
                 // Raise error event
                 OnError?.Invoke("Unable to connect to peer " + Connection.Host + ":" + Connection.Port, EventArgs.Empty);
             }

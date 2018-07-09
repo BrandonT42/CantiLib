@@ -33,7 +33,7 @@ namespace Canti.CryptoNote.P2P
 
     internal struct NodeData
     {
-        internal Guid NetworkId { get; set; }
+        internal string NetworkId { get; set; }
         internal byte Version { get; set; }
         internal ulong PeerId { get; set; }
         internal ulong LocalTime { get; set; }

@@ -9,16 +9,16 @@ namespace Canti.CryptoNote.P2P
         // Storage headers
         internal const uint PORTABLE_STORAGE_SIGNATUREA = 0x01011101;
         internal const uint PORTABLE_STORAGE_SIGNATUREB = 0x01020101; // Bender's nightmare 
-        internal const byte  PORTABLE_STORAGE_FORMAT_VER = 1;
+        internal const byte PORTABLE_STORAGE_FORMAT_VER = 1;
 
-        // ???
+        // Constants for varint conversion
         internal const byte PORTABLE_RAW_SIZE_MARK_MASK = 0x03;
         internal const byte PORTABLE_RAW_SIZE_MARK_BYTE = 0;
         internal const byte PORTABLE_RAW_SIZE_MARK_WORD = 1;
         internal const byte PORTABLE_RAW_SIZE_MARK_DWORD = 2;
         internal const byte PORTABLE_RAW_SIZE_MARK_INT64 = 3;
 
-        // ???
+        // Max string length
         internal const uint MAX_STRING_LEN_POSSIBLE = 2000000000; // Do not let string be so big
 
         // ???
@@ -41,7 +41,7 @@ namespace Canti.CryptoNote.P2P
             BOOL    = 11, // Bool
             OBJECT  = 12, // Object
             ARRAY   = 13, // Array
-            GUID    = 14  // Guid
+            //GUID    = 14  // Guid
         }
     }
 }

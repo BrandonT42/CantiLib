@@ -76,7 +76,6 @@ namespace Canti.CryptoNote.P2P
             else if (Value.GetType() == typeof(string)) Type = SerializationType.STRING;
             else if (Value.GetType() == typeof(bool)) Type = SerializationType.BOOL;
             else if (Value.GetType().IsArray) Type = SerializationType.ARRAY;
-            else if (Value.GetType() == typeof(Guid)) Type = SerializationType.GUID;
             else Type = SerializationType.OBJECT;
             return Type;
         }
@@ -145,20 +144,24 @@ namespace Canti.CryptoNote.P2P
             else if (Type == SerializationType.DOUBLE)
             {
                 // Encode bytes
+                ulong Input = (ulong)Convert.ToDouble(Value);
                 EntryBytes = new byte[8];
-                EntryBytes[0] = (byte)(ulong)Value;
-                EntryBytes[1] = (byte)(((ulong)Value >> 8) & 0xFF);
-                EntryBytes[2] = (byte)(((ulong)Value >> 16) & 0xFF);
-                EntryBytes[3] = (byte)(((ulong)Value >> 24) & 0xFF);
-                EntryBytes[4] = (byte)(((ulong)Value >> 32) & 0xFF);
-                EntryBytes[5] = (byte)(((ulong)Value >> 40) & 0xFF);
-                EntryBytes[6] = (byte)(((ulong)Value >> 48) & 0xFF);
-                EntryBytes[7] = (byte)(((ulong)Value >> 56) & 0xFF);
+                EntryBytes[0] = (byte)Input;
+                EntryBytes[1] = (byte)((Input >> 8) & 0xFF);
+                EntryBytes[2] = (byte)((Input >> 16) & 0xFF);
+                EntryBytes[3] = (byte)((Input >> 24) & 0xFF);
+                EntryBytes[4] = (byte)((Input >> 32) & 0xFF);
+                EntryBytes[5] = (byte)((Input >> 40) & 0xFF);
+                EntryBytes[6] = (byte)((Input >> 48) & 0xFF);
+                EntryBytes[7] = (byte)((Input >> 56) & 0xFF);
             }
 
             // Type is string
             else if (Type == SerializationType.STRING)
             {
+                // Check string length
+                if (((string)Value).Length > MAX_STRING_LEN_POSSIBLE) EntryBytes = new byte[0];
+
                 // Encode bytes
                 EntryBytes = Encoding.StringToByteArray((string)Value);
 
@@ -192,21 +195,9 @@ namespace Canti.CryptoNote.P2P
                 EntryBytes = SerializeArray((Array)Value);
             }
 
-            // Type is guid
-            else if (Type == SerializationType.GUID)
-            {
-                // Encode bytes
-                EntryBytes = ((Guid)Value).ToByteArray();
-
-                // Add string length
-                EntryBytes = Encoding.AppendToByteArray(EntryBytes, SerializeVarint((ulong)((Guid)Value).ToByteArray().Length));
-            }
-
-            // Add bytes to output array
-            Output = Encoding.AppendToByteArray(EntryBytes, Output);
-
-            // Return output array
-            return Output;
+            // Return result
+            if (EntryBytes.Length > 0) return Encoding.AppendToByteArray(EntryBytes, Output);
+            else return new byte[0];
         }
 
         // Serializes a variable int to a byte array

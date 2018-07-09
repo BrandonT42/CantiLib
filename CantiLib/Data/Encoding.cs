@@ -65,17 +65,38 @@ namespace Canti.Data
 
         public static byte[] StringToByteArray(string Input)
         {
-            return System.Text.Encoding.ASCII.GetBytes(Input);
+            byte[] Output = new byte[0];
+            foreach (char c in Input.ToCharArray()) Output = AppendToByteArray(new byte[] { (byte)c }, Output);
+            return Output;
         }
 
         public static string ByteArrayToString(byte[] Input)
         {
-            return System.Text.Encoding.ASCII.GetString(Input);
+            string Output = "";
+            foreach (byte b in Input) Output += (char)b;
+            return Output;
         }
 
         public static string HexStringToString(string Input)
         {
             return ByteArrayToString(HexStringToByteArray(Input));
+        }
+        public static string StringToHexString(string Input)
+        {
+            return ByteArrayToHexString(StringToByteArray(Input));
+        }
+
+        public static string GuidToString(Guid Input)
+        {
+            byte[] bytes = Input.ToByteArray();
+            char[] chars = new char[bytes.Length / sizeof(char)];
+            Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
+            Console.WriteLine(StringToHexString(new string(chars)));
+            return new string(chars);
+        }
+        public static Guid StringToGuid(string Input)
+        {
+            return new Guid(HexStringToByteArray(Input));
         }
         #endregion
 
