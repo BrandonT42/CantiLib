@@ -42,7 +42,7 @@ namespace Canti.CryptoNote.P2P
             }
 
             // Add array length
-            Output = Encoding.AppendToByteArray(SerializeVarint((ulong)Entries.Count), Output);
+            Output = Encoding.AppendToByteArray(SerializeVarInt(Entries.Count), Output);
 
             // Iterate over objects
             foreach (KeyValuePair<string, object> Entry in Entries)
@@ -56,6 +56,15 @@ namespace Canti.CryptoNote.P2P
 
             // Return output array
             return Output;
+        }
+
+        // Deserializes a byte array to a storage object
+        internal bool Deserialize(byte[] Data)
+        {
+            //
+
+            // Return result
+            return false;
         }
 
         // Gets an object's serialization type
@@ -166,7 +175,7 @@ namespace Canti.CryptoNote.P2P
                 EntryBytes = Encoding.StringToByteArray((string)Value);
 
                 // Add string length
-                EntryBytes = Encoding.AppendToByteArray(EntryBytes, SerializeVarint((ulong)((string)Value).Length));
+                EntryBytes = Encoding.AppendToByteArray(EntryBytes, SerializeVarInt(((string)Value).Length));
             }
 
             // Type is bool
@@ -201,45 +210,112 @@ namespace Canti.CryptoNote.P2P
         }
 
         // Serializes a variable int to a byte array
-        internal static byte[] SerializeVarint(ulong Value)
+        private static byte[] SerializeVarInt<T>(T Value) where T : IConvertible
         {
-            // Set temporary size
-            byte Size = 0x00;
+            // Create an output buffer
+            byte[] Output = new byte[0];
+
+            // Verify type
+            SerializationType Type = GetType(Value);
+            if ((int)Type < (int)SerializationType.LONG || (int)Type > (int)SerializationType.BYTE) return new byte[0];
+
+            // Check varint size
+            ulong Size = Convert.ToUInt64(Value);
 
             // Value is 8 bit
-            if (Value <= byte.MaxValue)
+            if (Size <= 63)
             {
-                // Get byte value
-                Size = (byte)(Value << 2);
-                Size |= PORTABLE_RAW_SIZE_MARK_BYTE;
+                // Encode varint
+                byte Converted = Convert.ToByte(Value);
+                byte Input = (byte)(Converted << 2);
+                Input |= PORTABLE_RAW_SIZE_MARK_BYTE;
+
+                // Encode bytes to buffer
+                Output = new byte[1];
+                Output[0] = (byte)Input;
             }
 
             // Value is 16 bit
-            else if (Value <= ushort.MaxValue)
+            else if (Size <= 16383)
             {
-                // Get byte value
-                Size = (byte)(Value << 2);
-                Size |= PORTABLE_RAW_SIZE_MARK_WORD;
+                // Encode varint
+                ushort Converted = Convert.ToUInt16(Value);
+                ushort Input = (ushort)(Converted << 2);
+                Input |= PORTABLE_RAW_SIZE_MARK_WORD;
+
+                // Encode bytes to buffer
+                Output = new byte[2];
+                Output[0] = (byte)Input;
+                Output[1] = (byte)((Input >> 8) & 0xFF);
             }
 
             // Value is 32 bit
-            else if (Value <= uint.MaxValue)
+            else if (Size <= 1073741823)
             {
-                // Get byte value
-                Size = (byte)(Value << 2);
-                Size |= PORTABLE_RAW_SIZE_MARK_DWORD;
+                // Encode varint
+                uint Converted = Convert.ToUInt32(Value);
+                uint Input = (uint)(Converted << 2);
+                Input |= PORTABLE_RAW_SIZE_MARK_DWORD;
+
+                // Encode bytes to buffer
+                Output = new byte[4];
+                Output[0] = (byte)Input;
+                Output[1] = (byte)((Input >> 8) & 0xFF);
+                Output[2] = (byte)((Input >> 16) & 0xFF);
+                Output[3] = (byte)((Input >> 24) & 0xFF);
             }
 
             // Value is 64 bit
-            else if (Value <= ulong.MaxValue)
+            else if (Size <= 4611686018427387903)
             {
-                // Get byte value
-                Size = (byte)(Value << 2);
-                Size |= PORTABLE_RAW_SIZE_MARK_INT64;
+                // Encode varint
+                ulong Converted = Convert.ToUInt64(Value);
+                ulong Input = (ulong)(Converted << 2);
+                Input |= PORTABLE_RAW_SIZE_MARK_INT64;
+
+                // Encode bytes to buffer
+                Output = new byte[8];
+                Output[0] = (byte)Input;
+                Output[1] = (byte)((Input >> 8) & 0xFF);
+                Output[2] = (byte)((Input >> 16) & 0xFF);
+                Output[3] = (byte)((Input >> 24) & 0xFF);
+                Output[4] = (byte)((Input >> 32) & 0xFF);
+                Output[5] = (byte)((Input >> 40) & 0xFF);
+                Output[6] = (byte)((Input >> 48) & 0xFF);
+                Output[7] = (byte)((Input >> 56) & 0xFF);
             }
 
-            // Create and return a byte array
-            return new byte[] { Size };
+            // Return encoded varint buffer
+            return Output;
+        }
+
+        // Deserializes a variable int from a byte array, and returns a new offset value
+        internal static T DeserializeVarInt<T>(byte[] Data, int Offset, out int NewOffset) where T : IConvertible
+        {
+            // Get byte size
+            int SizeMask = Data[Offset] & PORTABLE_RAW_SIZE_MARK_MASK;
+            int BytesLeft = 0;
+
+            // Type is 8 bit
+            if (SizeMask == PORTABLE_RAW_SIZE_MARK_BYTE) BytesLeft = 0;
+
+            // Type is 16 bit
+            else if (SizeMask == PORTABLE_RAW_SIZE_MARK_WORD) BytesLeft = 1;
+
+            // Type is 32 bit
+            else if (SizeMask == PORTABLE_RAW_SIZE_MARK_DWORD) BytesLeft = 3;
+
+            // Type is 64 bit
+            else if (SizeMask == PORTABLE_RAW_SIZE_MARK_INT64) BytesLeft = 7;
+
+            // Calculate output number
+            int Output = Data[Offset];
+            for (NewOffset = Offset; NewOffset <= Offset + BytesLeft; NewOffset++)
+                Output |= Data[NewOffset] << ((NewOffset - Offset) * 8);
+            Output >>= 2;
+
+            // Return result
+            return (T)Convert.ChangeType(Output, typeof(T));
         }
 
         // Serializes an array to a byte array
@@ -249,7 +325,7 @@ namespace Canti.CryptoNote.P2P
             byte[] Output = new byte[0];
 
             // Add array size
-            Output = SerializeVarint((ulong)Value.LongLength);
+            Output = SerializeVarInt(Value.LongLength);
 
             // Loop through each array object
             for (int i = 0; i < Value.Length; i++)
@@ -278,6 +354,37 @@ namespace Canti.CryptoNote.P2P
 
             // Return output array
             return Encoding.AppendToByteArray(ObjectBytes, NameBytes);
+        }
+
+
+
+
+
+        internal bool AddEntryAsBinary(string name, object[] value)
+        {
+            // Make sure array contains values
+            if (value == null && value.Length > 0) return false;
+            
+            // Create a buffer to hold all elements within array
+            byte[] blob = new byte[value.Length * System.Runtime.InteropServices.Marshal.SizeOf(value.SyncRoot)];
+
+            // Create an element of the array type, and assign the first element in the array to it
+            //Type T = value.GetType().GetElementType();
+            //var Element = Activator.CreateInstance(T);
+            //Element = value[0];
+
+            // Iterate through each element in the array
+            for (int i = 0; i < value.Length; i++) blob = Encoding.AppendToByteArray(Encoding.ObjectToByteArray(value[0]), blob);
+
+            /*T* ptr = reinterpret_cast<T*>(&blob[0]);
+
+            for (const auto&item : value) {
+                *ptr++ = item;
+            }
+            
+            serializer.binary(blob, name);*/
+            AddEntry(name, Encoding.ByteArrayToString(blob));
+            return true;
         }
     }
 }

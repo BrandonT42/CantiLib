@@ -7,7 +7,7 @@ namespace Canti.CryptoNote.P2P.Commands
     internal class CommandPing
     {
         // Command ID
-        internal const int Id = GlobalsConfig.P2P_COMMANDS_POOL_BASE + 3;
+        internal const int Id = GlobalsConfig.LEVIN_COMMANDS_BASE + 3;
 
         // Outgoing request structure
         internal struct Request : ICommandRequestBase

@@ -1,14 +1,17 @@
 ﻿using Canti.Data;
+using Canti.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace Canti.CryptoNote.P2P
 {
     internal partial class LevinProtocol
     {
         // Server connection
-        private Server Connection;
+        private Server Server;
+
+        // Logger
+        private Logger Logger;
 
         // Peer read status (0 = head, 1 = body)
         private Dictionary<PeerConnection, LevinPeer> Peers = new Dictionary<PeerConnection, LevinPeer>();
@@ -17,12 +20,15 @@ namespace Canti.CryptoNote.P2P
         internal LevinProtocol(Server Connection)
         {
             // Set connection
-            this.Connection = Connection;
+            Server = Connection;
+
+            // Set logger
+            Logger = Connection.Logger;
 
             // Bind event handlers
-            this.Connection.OnDataReceived += OnDataReceived;
-            this.Connection.OnPeerConnected += OnPeerConnected;
-            this.Connection.OnPeerDisconnected += OnPeerDisconnected;
+            Server.OnDataReceived += OnDataReceived;
+            Server.OnPeerConnected += OnPeerConnected;
+            Server.OnPeerDisconnected += OnPeerDisconnected;
         }
 
         // Data received
@@ -36,33 +42,38 @@ namespace Canti.CryptoNote.P2P
             if (Peer.ReadStatus == PacketReadStatus.Head)
             {
                 // Decode header
-                Peer.Header = BucketHead2.Deserialize(Packet.Data);
+                try { Peer.Header = BucketHead2.Deserialize(Packet.Data); }
+                catch
+                {
+                    Logger?.Log(Level.DEBUG, "Could not deserialize incoming packet header, incorrect format");
+                    return;
+                }
 
                 // Set peer data
                 Peer.Data = Packet.Data;
 
                 // Debug
-                Console.WriteLine("Received header:");
-                Console.WriteLine(" - Signature: {0}", Peers[Packet.Peer].Header.Signature);
-                Console.WriteLine(" - Payload Size: {0}", Peers[Packet.Peer].Header.PayloadSize);
-                Console.WriteLine(" - Response Required: {0}", Peers[Packet.Peer].Header.ResponseRequired);
-                Console.WriteLine(" - Command Code: {0}", Peers[Packet.Peer].Header.CommandCode);
-                Console.WriteLine(" - Return Code: {0}", Peers[Packet.Peer].Header.ReturnCode);
-                Console.WriteLine(" - Flags: {0}", Peers[Packet.Peer].Header.Flags);
-                Console.WriteLine(" - Protocol Version: {0}", Peers[Packet.Peer].Header.ProtocolVersion);
+                Logger?.Log(Level.DEBUG, "Received header:");
+                Logger?.Log(Level.DEBUG, " - Signature: {0}", Peers[Packet.Peer].Header.Signature);
+                Logger?.Log(Level.DEBUG, " - Payload Size: {0}", Peers[Packet.Peer].Header.PayloadSize);
+                Logger?.Log(Level.DEBUG, " - Response Required: {0}", Peers[Packet.Peer].Header.ResponseRequired);
+                Logger?.Log(Level.DEBUG, " - Command Code: {0}", Peers[Packet.Peer].Header.CommandCode);
+                Logger?.Log(Level.DEBUG, " - Return Code: {0}", Peers[Packet.Peer].Header.ReturnCode);
+                Logger?.Log(Level.DEBUG, " - Flags: {0}", Peers[Packet.Peer].Header.Flags);
+                Logger?.Log(Level.DEBUG, " - Protocol Version: {0}", Peers[Packet.Peer].Header.ProtocolVersion);
 
                 // Check that signature matches
                 if (Peer.Header.Signature != GlobalsConfig.LEVIN_SIGNATURE)
                 {
-                    Console.WriteLine("Signature mismatch, got {0}, expected {1}", Peers[Packet.Peer].Header.Signature, GlobalsConfig.LEVIN_SIGNATURE);
-                    return; // TODO - throw error
+                    Logger?.Log(Level.DEBUG, "Incoming packet signature mismatch, expected {0}, received {1}", GlobalsConfig.LEVIN_SIGNATURE, Peers[Packet.Peer].Header.Signature);
+                    return;
                 }
 
                 // Check packet size
                 if (Peer.Header.PayloadSize > GlobalsConfig.LEVIN_MAX_PACKET_SIZE)
                 {
-                    Console.WriteLine("Packet size too big");
-                    return; // TODO - throw error
+                    Logger?.Log(Level.DEBUG, "Incoming packet size is too big, max size is {0}, received {1}", GlobalsConfig.LEVIN_MAX_PACKET_SIZE, Packet.Data.Length);
+                    return;
                 }
 
                 // Set new read status
@@ -95,15 +106,15 @@ namespace Canti.CryptoNote.P2P
                 };
 
                 // Debug
-                Console.WriteLine("Received command:");
-                Console.WriteLine(" - Command Code: {0}", Command.CommandCode);
-                Console.WriteLine(" - Is Notification: {0}", Command.IsNotification);
-                Console.WriteLine(" - Is Response: {0}", Command.IsResponse);
-                Console.WriteLine(" - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
+                Logger?.Log(Level.DEBUG, "Received command:");
+                Logger?.Log(Level.DEBUG, " - Command Code: {0}", Command.CommandCode);
+                Logger?.Log(Level.DEBUG, " - Is Notification: {0}", Command.IsNotification);
+                Logger?.Log(Level.DEBUG, " - Is Response: {0}", Command.IsResponse);
+                Logger?.Log(Level.DEBUG, " - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
                 
                 // Deserialize response
                 Commands.CommandHandshake.Response Response = new Commands.CommandHandshake.Response();
-                Response = Response.Deserialize(Command.Data);
+                //Response = Response.Deserialize(Command.Data);
 
                 // Send response
                 // TODO
@@ -150,10 +161,10 @@ namespace Canti.CryptoNote.P2P
             };
 
             // Send header packet
-            if (Connection.SendMessage(Peer, Header.Serialize()))
+            if (Server.SendMessage(Peer, Header.Serialize()))
             {
                 // Send body packet
-                Connection.SendMessage(Peer, Data);
+                Server.SendMessage(Peer, Data);
             }
         }
 
@@ -172,10 +183,10 @@ namespace Canti.CryptoNote.P2P
             };
 
             // Send header packet
-            Connection.Broadcast(Header.Serialize());
+            Server.Broadcast(Header.Serialize());
             
             // Send body packet
-            Connection.Broadcast(Data);
+            Server.Broadcast(Data);
         }
 
         // Notifies a peer with a command, no response expected
@@ -193,36 +204,36 @@ namespace Canti.CryptoNote.P2P
             };
 
             // Send header packet
-            if (Connection.SendMessage(Peer, Header.Serialize()))
+            if (Server.SendMessage(Peer, Header.Serialize()))
             {
                 // Send body packet
-                Connection.SendMessage(Peer, Data);
+                Server.SendMessage(Peer, Data);
             }
         }
 
-        // Notifies all peers with a command, no response expected
+        // Notifies all peers with a command, no response expected (DEBUG PURPOSES)
         internal void SendMessageAll(int CommandCode, byte[] Data)
         {
             // Form message header
             BucketHead2 Header = new BucketHead2
             {
                 Signature = GlobalsConfig.LEVIN_SIGNATURE,
-                ResponseRequired = true,
+                ResponseRequired = false,
                 PayloadSize = (ulong)Data.Length,
                 CommandCode = (uint)CommandCode,
                 ProtocolVersion = LEVIN_PROTOCOL_VER_1,
-                Flags = LEVIN_PACKET_REQUEST
+                Flags = LEVIN_PACKET_RESPONSE
             };
 
             // Debug
-            Console.WriteLine("Sending header:");
-            Console.WriteLine(" - Signature: {0}", Header.Signature);
-            Console.WriteLine(" - Payload Size: {0}", Header.PayloadSize);
-            Console.WriteLine(" - Response Required: {0}", Header.ResponseRequired);
-            Console.WriteLine(" - Command Code: {0}", Header.CommandCode);
-            Console.WriteLine(" - Return Code: {0}", Header.ReturnCode);
-            Console.WriteLine(" - Flags: {0}", Header.Flags);
-            Console.WriteLine(" - Protocol Version: {0}", Header.ProtocolVersion);
+            Logger?.Log(Level.DEBUG, "Sending header:");
+            Logger?.Log(Level.DEBUG, " - Signature: {0}", Header.Signature);
+            Logger?.Log(Level.DEBUG, " - Payload Size: {0}", Header.PayloadSize);
+            Logger?.Log(Level.DEBUG, " - Response Required: {0}", Header.ResponseRequired);
+            Logger?.Log(Level.DEBUG, " - Command Code: {0}", Header.CommandCode);
+            Logger?.Log(Level.DEBUG, " - Return Code: {0}", Header.ReturnCode);
+            Logger?.Log(Level.DEBUG, " - Flags: {0}", Header.Flags);
+            Logger?.Log(Level.DEBUG, " - Protocol Version: {0}", Header.ProtocolVersion);
 
             Command Command = new Command
             {
@@ -233,18 +244,18 @@ namespace Canti.CryptoNote.P2P
             };
 
             // Debug
-            Console.WriteLine("Sending command:");
-            Console.WriteLine(" - Command Code: {0}", Command.CommandCode);
-            Console.WriteLine(" - Is Notification: {0}", Command.IsNotification);
-            Console.WriteLine(" - Is Response: {0}", Command.IsResponse);
-            Console.WriteLine(" - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
+            Logger?.Log(Level.DEBUG, "Sending command:");
+            Logger?.Log(Level.DEBUG, " - Command Code: {0}", Command.CommandCode);
+            Logger?.Log(Level.DEBUG, " - Is Notification: {0}", Command.IsNotification);
+            Logger?.Log(Level.DEBUG, " - Is Response: {0}", Command.IsResponse);
+            Logger?.Log(Level.DEBUG, " - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
 
             // Send header packet
             //Connection.Broadcast(Header.Serialize());
 
             // Send body packet
             //Connection.Broadcast(Data);
-            Connection.Broadcast(Encoding.AppendToByteArray(Data, Header.Serialize()));
+            Server.Broadcast(Encoding.AppendToByteArray(Data, Header.Serialize()));
         }
 
         // Encodes a command and returns the raw bytes
@@ -260,7 +271,7 @@ namespace Canti.CryptoNote.P2P
             // Verify type
             if (!typeof(ICommandResponseBase<T>).IsAssignableFrom(typeof(T)))
             {
-                Connection.OnError?.Invoke("Failed to decode command response - incorrect type: " + typeof(T).FullName + ", expected type ICommandResponseBase<T>", EventArgs.Empty);
+                Logger?.Log(Level.DEBUG, "Failed to decode command response - incorrect type: {0}, expected type ICommandResponseBase<T>", typeof(T).FullName);
                 return default(T);
             }
 

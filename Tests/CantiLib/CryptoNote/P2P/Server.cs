@@ -26,7 +26,7 @@ namespace Canti.CryptoNote.P2P
 
         // Internal variables
         internal Logger Logger;
-        internal bool Running = true;
+        internal bool Running = false;
         internal int Port = 0;
 
         // Event handlers
@@ -40,8 +40,18 @@ namespace Canti.CryptoNote.P2P
         public void Start(int Port = GlobalsConfig.P2P_DEFAULT_PORT)
         {
             // Create a new TCP listener and start listening
-            Listener = new TcpListener(IPAddress.Parse("127.0.0.1"), Port);
-            Listener.Start();
+            try
+            {
+                Listener = new TcpListener(IPAddress.Parse("127.0.0.1"), Port);
+                Listener.Start();
+                Running = true;
+                this.Port = Port;
+            }
+            catch
+            {
+                Logger.Log(Level.FATAL, "Failed to start P2P server on port {0}, port may be in use", Port);
+                OnError?.Invoke("Failed to start P2P server", EventArgs.Empty);
+            }
 
             // Create a levin protocol context
             Context = new LevinProtocol(this);

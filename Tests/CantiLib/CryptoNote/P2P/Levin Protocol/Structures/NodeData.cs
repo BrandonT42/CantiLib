@@ -3,6 +3,7 @@ using System;
 
 namespace Canti.CryptoNote.P2P
 {
+    [Serializable]
     internal struct NetworkAddress
     {
         internal uint IpAddress { get; set; }
@@ -16,6 +17,7 @@ namespace Canti.CryptoNote.P2P
         }
     };
 
+    [Serializable]
     internal struct PeerlistEntry
     {
         internal NetworkAddress Address { get; set; }
@@ -31,6 +33,7 @@ namespace Canti.CryptoNote.P2P
         }
     };
 
+    [Serializable]
     internal struct NodeData
     {
         internal string NetworkId { get; set; }
