@@ -26,7 +26,7 @@ namespace Canti.CryptoNote
             {
                 byte[] Children = Encoding.ObjectToByteArray(Child);
                 if (Compress) Children = Encoding.CompressByteArray(Children);
-                Extra.Hex += "02" + Encoding.IntToHexString(Children.Length) + Encoding.ByteArrayToHexString(Children);
+                Extra.Hex += "02" + Encoding.IntegerToHexString(Children.Length) + Encoding.ByteArrayToHexString(Children);
             }
 
             // Check extra length against block size

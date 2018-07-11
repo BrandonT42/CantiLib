@@ -88,7 +88,7 @@ namespace Canti.Tests
                 else if (MenuSelection == 2)
                 {
                     // Create a response
-                    CryptoNote.P2P.Commands.CommandHandshake.Response Response = new CryptoNote.P2P.Commands.CommandHandshake.Response
+                    CryptoNote.P2P.Commands.CommandHandshake.Request Request = new CryptoNote.P2P.Commands.CommandHandshake.Request
                     {
                         NodeData = new NodeData()
                         {
@@ -106,7 +106,7 @@ namespace Canti.Tests
                     };
 
                     // Get body bytes
-                    byte[] BodyBytes = Response.Serialize();
+                    byte[] BodyBytes = Request.Serialize();
 
                     // Send notification
                     Server.Context.SendMessageAll(CryptoNote.P2P.Commands.CommandHandshake.Id, BodyBytes);

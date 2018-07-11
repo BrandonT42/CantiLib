@@ -8,10 +8,25 @@ namespace Canti.Data
 {
     public static class Encoding
     {
+        #region Utilities
+        // Gets the byte size of an object
+        public static int GetSizeOfObject(object Input)
+        {
+            return System.Runtime.InteropServices.Marshal.SizeOf(Input);
+        }
+
+        // Gets the smallest integer type an integer will fit in
+        public static object GetSmallestIntegerType(ulong Value)
+        {
+            if (Value < 64) return (byte)Value;
+            else if (Value < 16384) return (ushort)Value;
+            else if (Value < 1073741824) return (uint)Value;
+            else return Value;
+        }
+        #endregion
+
         #region Objects
-        /// <summary>
-        /// Encodes an object to a hex string
-        /// </summary>
+        // Encodes an object to a hex string
         internal static string ObjectToHexString(object Input)
         {
             byte[] Bytes = ObjectToByteArray(Input);
@@ -19,26 +34,14 @@ namespace Canti.Data
             return Hex;
         }
 
-        /// <summary>
-        /// Decodes an object from a hex string
-        /// </summary>
-        public static object DecodeObject(string Input)
+        // Decodes an object from a hex string
+        public static T HexStringToObject<T>(string Input)
         {
-            try
-            {
-                byte[] Bytes = HexStringToByteArray(Input);
-                object Output = DecodeObject(Bytes);
-                return Output;
-            }
-            catch
-            {
-                return new object();
-            }
+            byte[] Bytes = HexStringToByteArray(Input);
+            return DecodeObject<T>(Bytes);
         }
 
-        /// <summary>
-        /// Encodes an object to a byte array
-        /// </summary>
+        // Encodes an object to a byte array
         public static byte[] ObjectToByteArray(object Input)
         {
             BinaryFormatter Binary = new BinaryFormatter();
@@ -49,20 +52,21 @@ namespace Canti.Data
             }
         }
 
-        /// <summary>
-        /// Decodes a byte array to an object
-        /// </summary>
-        public static object DecodeObject(byte[] Input)
+        // Decodes an object from a byte array
+        public static T DecodeObject<T>(byte[] Input)
         {
             using (var Stream = new MemoryStream())
             {
                 BinaryFormatter Binary = new BinaryFormatter();
                 Stream.Write(Input, 0, Input.Length);
                 Stream.Seek(0, SeekOrigin.Begin);
-                return Binary.Deserialize(Stream);
+                return (T)Binary.Deserialize(Stream);
             }
         }
+        #endregion
 
+        #region Strings
+        // Encodes a string to a byte array
         public static byte[] StringToByteArray(string Input)
         {
             byte[] Output = new byte[0];
@@ -70,6 +74,7 @@ namespace Canti.Data
             return Output;
         }
 
+        // Decodes a string from a byte array
         public static string ByteArrayToString(byte[] Input)
         {
             string Output = "";
@@ -77,125 +82,71 @@ namespace Canti.Data
             return Output;
         }
 
-        public static string HexStringToString(string Input)
-        {
-            return ByteArrayToString(HexStringToByteArray(Input));
-        }
+        // Encodes a string to a hex string
         public static string StringToHexString(string Input)
         {
             return ByteArrayToHexString(StringToByteArray(Input));
         }
 
-        public static string GuidToString(Guid Input)
+        // Decodes a string from a hex string
+        public static string HexStringToString(string Input)
         {
-            byte[] bytes = Input.ToByteArray();
-            char[] chars = new char[bytes.Length / sizeof(char)];
-            Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
-            Console.WriteLine(StringToHexString(new string(chars)));
-            return new string(chars);
-        }
-        public static Guid StringToGuid(string Input)
-        {
-            return new Guid(HexStringToByteArray(Input));
+            return ByteArrayToString(HexStringToByteArray(Input));
         }
         #endregion
 
         #region Integers
-        /// <summary>
-        /// Encodes an integer to a little endian hex string
-        /// </summary>
-        public static string IntToHexString(int Input)
+        // Encodes an integer type to a hex string
+        public static string IntegerToHexString<T>(T Input) where T : IConvertible
         {
-            byte[] Bytes = IntToByteArray(Input);
-            return ByteArrayToHexString(Bytes);
-        }
-        public static string UlongToHexString(ulong Input)
-        {
-            byte[] Bytes = UlongToByteArray(Input);
+            byte[] Bytes = IntegerToByteArray(Input);
             return ByteArrayToHexString(Bytes);
         }
 
-        /// <summary>
-        /// Decodes an integer from a little endian hex string
-        /// </summary>
-        public static int HexStringToInt(string Input)
+        // Decodes a hex string to an integer type
+        public static T HexStringToInteger<T>(string Input) where T : IConvertible
         {
             byte[] Bytes = HexStringToByteArray(Input);
-            return ByteArrayToInt(Bytes);
-        }
-        public static ulong HexStringToUlong(string Input)
-        {
-            byte[] Bytes = HexStringToByteArray(Input);
-            return ByteArrayToUlong(Bytes);
+            return ByteArrayToInteger<T>(Bytes);
         }
 
-        /// <summary>
-        /// Encodes an integer to a little endian byte array
-        /// </summary>
-        public static byte[] IntToByteArray(int Input)
+        // Encodes an integer type to a byte array
+        public static byte[] IntegerToByteArray<T>(T Input) where T : IConvertible
         {
-            byte[] Buffer = new byte[4];
-            Buffer[0] = (byte)Input;
-            Buffer[1] = (byte)(((uint)Input >> 8) & 0xFF);
-            Buffer[2] = (byte)(((uint)Input >> 16) & 0xFF);
-            Buffer[3] = (byte)(((uint)Input >> 24) & 0xFF);
-            return Buffer;
-        }
-        public static byte[] UintToByteArray(uint Input)
-        {
-            byte[] Buffer = new byte[4];
-            Buffer[0] = (byte)Input;
-            Buffer[1] = (byte)((Input >> 8) & 0xFF);
-            Buffer[2] = (byte)((Input >> 16) & 0xFF);
-            Buffer[3] = (byte)((Input >> 24) & 0xFF);
-            return Buffer;
-        }
-        public static byte[] UlongToByteArray(ulong Input)
-        {
-            byte[] Buffer = new byte[8];
-            Buffer[0] = (byte)Input;
-            Buffer[1] = (byte)((Input >> 8) & 0xFF);
-            Buffer[2] = (byte)((Input >> 16) & 0xFF);
-            Buffer[3] = (byte)((Input >> 24) & 0xFF);
-            Buffer[4] = (byte)((Input >> 32) & 0xFF);
-            Buffer[5] = (byte)((Input >> 40) & 0xFF);
-            Buffer[6] = (byte)((Input >> 48) & 0xFF);
-            Buffer[7] = (byte)((Input >> 56) & 0xFF);
-            return Buffer;
-        }
-
-        /// <summary>
-        /// Decodes an integer from a little endian byte array
-        /// </summary>
-        public static int ByteArrayToInt(byte[] Input)
-        {
-            return (Input[3] << 24) | (Input[2] << 16) | (Input[1] << 8) | Input[0];
-        }
-        public static ulong ByteArrayToUlong(byte[] Input)
-        {
-            ulong Output = BitConverter.ToUInt64(Input, 0);
-            if (!BitConverter.IsLittleEndian)
-            {
-                Output =    (Output & 0x00000000000000FFUL) << 56 | (Output & 0x000000000000FF00UL) << 40 |
-                            (Output & 0x0000000000FF0000UL) << 24 | (Output & 0x00000000FF000000UL) << 8  |
-                            (Output & 0x000000FF00000000UL) >> 8  | (Output & 0x0000FF0000000000UL) >> 24 |
-                            (Output & 0x00FF000000000000UL) >> 40 | (Output & 0xFF00000000000000UL) >> 56;
-            }
+            byte[] Output = new byte[GetSizeOfObject(default(T))];
+            for (int i = 0; i < Output.Length; i++)
+                Output[i] = (byte)(((Convert.ToUInt64(Input) >> i * 8) & 0xFF));
             return Output;
         }
 
-        /// <summary>
-        /// Encodes an unsigned long to a little endian byte array
-        /// </summary>
-        /// <param name="Input"></param>
-        /// <returns></returns>
-
+        // Decodes an integer type from a byte array
+        public static T ByteArrayToInteger<T>(byte[] Input) where T : IConvertible
+        {
+            ulong Output = ((ulong)Input[Input.Length - 1] << (Input.Length - 1) * 8);
+            for (int i = Input.Length - 2; i >= 0; i--)
+                Output |= ((ulong)Input[i] << i * 8);
+            return (T)Convert.ChangeType(Output, typeof(T));
+        }
+        public static T ByteArrayToInteger<T>(byte[] Input, int Offset) where T : IConvertible
+        {
+            byte[] Bytes = SplitByteArray(Input, Offset, GetSizeOfObject(default(T)));
+            ulong Output = ((ulong)Bytes[Bytes.Length - 1] << (Bytes.Length - 1) * 8);
+            for (int i = Bytes.Length - 2; i >= 0; i--)
+                Output |= ((ulong)Bytes[i] << i * 8);
+            return (T)Convert.ChangeType(Output, typeof(T));
+        }
+        public static T ByteArrayToInteger<T>(byte[] Input, int Offset, int Length) where T : IConvertible
+        {
+            byte[] Bytes = SplitByteArray(Input, Offset, Length);
+            ulong Output = ((ulong)Bytes[Bytes.Length - 1] << (Bytes.Length - 1) * 8);
+            for (int i = Bytes.Length - 2; i >= 0; i--)
+                Output |= ((ulong)Bytes[i] << i * 8);
+            return (T)Convert.ChangeType(Output, typeof(T));
+        }
         #endregion
 
         #region Conversion
-        /// <summary>
-        /// Converts a byte array to a hex string
-        /// </summary>
+        // Converts a byte array to a hex string
         public static string ByteArrayToHexString(byte[] Input)
         {
             StringBuilder Hex = new StringBuilder(Input.Length * 2);
@@ -203,9 +154,7 @@ namespace Canti.Data
             return Hex.ToString();
         }
 
-        /// <summary>
-        /// Converts a hex string to a byte array
-        /// </summary>
+        // Converts a hex string to a byte array
         public static byte[] HexStringToByteArray(String Input)
         {
             byte[] Output = new byte[Input.Length / 2];
@@ -216,9 +165,7 @@ namespace Canti.Data
         #endregion
 
         #region Compression
-        /// <summary>
-        /// Compresses a byte array
-        /// </summary>
+        // Compresses a byte array using gzip compression
         public static byte[] CompressByteArray(byte[] Input)
         {
             using (MemoryStream In = new MemoryStream(Input))
@@ -230,9 +177,7 @@ namespace Canti.Data
             }
         }
 
-        /// <summary>
-        /// Decompresses a byte array
-        /// </summary>
+        // Decomresses a byte array using gzip compressiion
         public static byte[] DecompressByteArray(byte[] Input)
         {
             using (MemoryStream In = new MemoryStream(Input))
@@ -245,7 +190,8 @@ namespace Canti.Data
         }
         #endregion
 
-        #region Utility
+        #region Byte Arrays
+        // Splits a byte array into a smaller array
         public static byte[] SplitByteArray(byte[] Source, int Offset, int Length)
         {
             byte[] Output = new byte[Length];
@@ -253,18 +199,35 @@ namespace Canti.Data
             return Output;
         }
 
+        // Appends one byte array to the end of another one
         public static byte[] AppendToByteArray(byte[] Source, byte[] Destination)
         {
-            byte[] NewBytes = new byte[Source.Length + Destination.Length];
+            byte[] NewBytes = new byte[Source.LongLength + Destination.LongLength];
             Buffer.BlockCopy(Destination, 0, NewBytes, 0, Destination.Length);
             Buffer.BlockCopy(Source, 0, NewBytes, Destination.Length, Source.Length);
             return NewBytes;
         }
         #endregion
 
-        /// <summary>
-        /// Gets max block space allowed
-        /// </summary>
+        #region Miscellaneous
+        // Converts a guid to a hex string
+        public static string GuidToHexString(Guid Input)
+        {
+            byte[] bytes = Input.ToByteArray();
+            char[] chars = new char[bytes.Length / sizeof(char)];
+            Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
+            Console.WriteLine(StringToHexString(new string(chars)));
+            return new string(chars);
+        }
+
+        // Converts a hex string to a guid
+        public static Guid HexStringToGuid(string Input)
+        {
+            return new Guid(HexStringToByteArray(Input));
+        }
+        #endregion
+
+        // This doesn't belong here lol
         public static int BlockSizeLimit()
         {
             // Currently hard set to 115kb

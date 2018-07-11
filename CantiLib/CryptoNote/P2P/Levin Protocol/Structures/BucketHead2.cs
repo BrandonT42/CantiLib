@@ -24,12 +24,12 @@ namespace Canti.CryptoNote.P2P
             int Offset = 0;
 
             // Add signature bytes
-            byte[] CurrentBytes = Encoding.UlongToByteArray(Signature);
+            byte[] CurrentBytes = Encoding.IntegerToByteArray(Signature);
             Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
             Offset += CurrentBytes.Length;
 
             // Add payload size bytes
-            CurrentBytes = Encoding.UlongToByteArray(PayloadSize);
+            CurrentBytes = Encoding.IntegerToByteArray(PayloadSize);
             Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
             Offset += CurrentBytes.Length;
 
@@ -39,22 +39,22 @@ namespace Canti.CryptoNote.P2P
             Offset += CurrentBytes.Length;
 
             // Add command code bytes
-            CurrentBytes = Encoding.IntToByteArray((int)CommandCode);
+            CurrentBytes = Encoding.IntegerToByteArray(CommandCode);
             Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
             Offset += CurrentBytes.Length;
 
             // Add return code bytes
-            CurrentBytes = Encoding.IntToByteArray(ReturnCode);
+            CurrentBytes = Encoding.IntegerToByteArray(ReturnCode);
             Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
             Offset += CurrentBytes.Length;
 
             // Add flags bytes
-            CurrentBytes = Encoding.IntToByteArray((int)Flags);
+            CurrentBytes = Encoding.IntegerToByteArray(Flags);
             Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
             Offset += CurrentBytes.Length;
 
             // Add protocol version bytes
-            CurrentBytes = Encoding.IntToByteArray((int)ProtocolVersion);
+            CurrentBytes = Encoding.IntegerToByteArray(ProtocolVersion);
             Buffer.BlockCopy(CurrentBytes, 0, Output, Offset, CurrentBytes.Length);
             Offset += CurrentBytes.Length;
 
@@ -76,12 +76,12 @@ namespace Canti.CryptoNote.P2P
                 // Decode signature
                 CurrentBytes = new byte[8];
                 Buffer.BlockCopy(Data, 0, CurrentBytes, 0, CurrentBytes.Length);
-                Head.Signature = Encoding.ByteArrayToUlong(CurrentBytes);
+                Head.Signature = Encoding.ByteArrayToInteger<ulong>(CurrentBytes);
 
                 // Decode payload size
                 CurrentBytes = new byte[8];
                 Buffer.BlockCopy(Data, 8, CurrentBytes, 0, CurrentBytes.Length);
-                Head.PayloadSize = Encoding.ByteArrayToUlong(CurrentBytes);
+                Head.PayloadSize = Encoding.ByteArrayToInteger<ulong>(CurrentBytes);
 
                 // Decode response required
                 CurrentBytes = new byte[1];
@@ -91,22 +91,22 @@ namespace Canti.CryptoNote.P2P
                 // Decode command code
                 CurrentBytes = new byte[4];
                 Buffer.BlockCopy(Data, 17, CurrentBytes, 0, CurrentBytes.Length);
-                Head.CommandCode = (uint)Encoding.ByteArrayToInt(CurrentBytes);
+                Head.CommandCode = Encoding.ByteArrayToInteger<uint>(CurrentBytes);
 
                 // Decode return code
                 CurrentBytes = new byte[4];
                 Buffer.BlockCopy(Data, 21, CurrentBytes, 0, CurrentBytes.Length);
-                Head.ReturnCode = Encoding.ByteArrayToInt(CurrentBytes);
+                Head.ReturnCode = Encoding.ByteArrayToInteger<int>(CurrentBytes);
 
                 // Decode flags
                 CurrentBytes = new byte[4];
                 Buffer.BlockCopy(Data, 25, CurrentBytes, 0, CurrentBytes.Length);
-                Head.Flags = (uint)Encoding.ByteArrayToInt(CurrentBytes);
+                Head.Flags = Encoding.ByteArrayToInteger<uint>(CurrentBytes);
 
                 // Decode protocol version
                 CurrentBytes = new byte[4];
                 Buffer.BlockCopy(Data, 29, CurrentBytes, 0, CurrentBytes.Length);
-                Head.ProtocolVersion = (uint)Encoding.ByteArrayToInt(CurrentBytes);
+                Head.ProtocolVersion = Encoding.ByteArrayToInteger<uint>(CurrentBytes);
 
                 // Return header object
                 return Head;

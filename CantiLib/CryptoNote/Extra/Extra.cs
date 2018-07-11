@@ -39,7 +39,7 @@ namespace Canti.CryptoNote
 
                 // Read size
                 byte[] DataSizeBytes = Encoding.HexStringToByteArray(Hex.Substring(0, 8));
-                int DataSize = Encoding.ByteArrayToInt(DataSizeBytes);
+                int DataSize = Encoding.ByteArrayToInteger<int>(DataSizeBytes);
 
                 // Get data string
                 string DataString = Hex.Substring(8, DataSize * 2);
@@ -52,7 +52,7 @@ namespace Canti.CryptoNote
                 // Decode hex string to dictionary
                 try
                 {
-                    Extra.Children.Add(Encoding.DecodeObject(DataBytes));
+                    Extra.Children.Add(Encoding.DecodeObject<object>(DataBytes));
                 }
                 catch
                 {

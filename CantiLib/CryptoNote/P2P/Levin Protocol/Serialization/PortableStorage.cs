@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Linq;
 
 namespace Canti.CryptoNote.P2P
 {
@@ -34,8 +35,8 @@ namespace Canti.CryptoNote.P2P
             if (IncludeHeader)
             {
                 // Add signatures
-                Output = Encoding.AppendToByteArray(Encoding.UintToByteArray(PORTABLE_STORAGE_SIGNATUREA), Output);
-                Output = Encoding.AppendToByteArray(Encoding.UintToByteArray(PORTABLE_STORAGE_SIGNATUREB), Output);
+                Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(PORTABLE_STORAGE_SIGNATUREA), Output);
+                Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(PORTABLE_STORAGE_SIGNATUREB), Output);
 
                 // Add version number
                 Output = Encoding.AppendToByteArray(new byte[] { PORTABLE_STORAGE_FORMAT_VER }, Output);
@@ -356,35 +357,206 @@ namespace Canti.CryptoNote.P2P
             return Encoding.AppendToByteArray(ObjectBytes, NameBytes);
         }
 
-
-
-
-
-        internal bool AddEntryAsBinary(string name, object[] value)
+        // Serializes an object to a byte array
+        internal static byte[] SerializeObjectAsBinary(object Value)
         {
-            // Make sure array contains values
-            if (value == null && value.Length > 0) return false;
-            
-            // Create a buffer to hold all elements within array
-            byte[] blob = new byte[value.Length * System.Runtime.InteropServices.Marshal.SizeOf(value.SyncRoot)];
+            // Create an output array
+            byte[] Output = new byte[0];
 
-            // Create an element of the array type, and assign the first element in the array to it
-            //Type T = value.GetType().GetElementType();
-            //var Element = Activator.CreateInstance(T);
-            //Element = value[0];
+            // Object is an integer
+            if (Value.GetType().GetInterfaces().Contains(typeof(IConvertible)))
+            {
+                // Integer is 8 bit
+                if (Value.GetType() == typeof(byte) || Value.GetType() == typeof(sbyte))
+                    Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(Convert.ToByte(Value)), Output);
 
-            // Iterate through each element in the array
-            for (int i = 0; i < value.Length; i++) blob = Encoding.AppendToByteArray(Encoding.ObjectToByteArray(value[0]), blob);
+                // Integer is 16 bit
+                else if (Value.GetType() == typeof(ushort) || Value.GetType() == typeof(short))
+                    Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(Convert.ToUInt16(Value)), Output);
 
-            /*T* ptr = reinterpret_cast<T*>(&blob[0]);
+                // Integer is 32 bit
+                else if (Value.GetType() == typeof(uint) || Value.GetType() == typeof(int))
+                    Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(Convert.ToUInt32(Value)), Output);
 
-            for (const auto&item : value) {
-                *ptr++ = item;
+                // Integer is 64 bit
+                else if (Value.GetType() == typeof(ulong) || Value.GetType() == typeof(long))
+                    Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(Convert.ToUInt64(Value)), Output);
             }
-            
-            serializer.binary(blob, name);*/
-            AddEntry(name, Encoding.ByteArrayToString(blob));
+
+            // Object is a string
+            else if (Value.GetType() == typeof(string))
+            {
+                Output = Encoding.AppendToByteArray(SerializeVarInt(((string)Value).Length), Output);
+                Output = Encoding.AppendToByteArray(Encoding.StringToByteArray((string)Value), Output);
+            }
+
+            // Object is an array
+            else if (Value.GetType().IsArray)
+            {
+                Output = Encoding.AppendToByteArray(SerializeArrayAsBinary((Array)Value), Output);
+            }
+
+            // Property is an object
+            else
+            {
+                // Get property list of type
+                var Properties = Value.GetType().GetProperties();
+                foreach (var Property in Properties)
+                    Output = Encoding.AppendToByteArray(SerializeObjectAsBinary(Property.GetValue(Value)), Output);
+            }
+
+            // Return output array
+            return Output;
+        }
+
+        // Serializes an array to a byte array
+        internal static byte[] SerializeArrayAsBinary(Array Value)
+        {
+            // Verify array is valid
+            if (Value == null) return new byte[0];
+            else if (!Value.GetType().IsArray) return new byte[0];
+
+            // Create an output array
+            byte[] Output = new byte[0];
+
+            // Loop through all array entries
+            for (int i = 0; i < Value.Length; i++)
+            {
+                // Encode object
+                byte[] Buffer = SerializeObjectAsBinary(Value.GetValue(i));
+
+                // Append to output array
+                Output = Encoding.AppendToByteArray(Buffer, Output);
+            }
+
+            // Return output array
+            return Output;
+        }
+
+        // Adds a new entry as a raw hexstring representation of the object's raw bytes
+        internal bool AddEntryAsBinary(string Name, object Value)
+        {
+            // Verify array is valid
+            if (Value == null) return false;
+            else if (!Value.GetType().IsArray) return false;
+
+            // Create an output array
+            byte[] Output = new byte[0];
+            Output = Encoding.AppendToByteArray(SerializeVarInt(Encoding.GetSizeOfObject(Value)), Output);
+
+            // Serialize object
+            Output = Encoding.AppendToByteArray(SerializeObjectAsBinary(Value), Output);
+
+            // Add as an entry
+            AddEntry(Name, Encoding.ByteArrayToString(Output));
             return true;
+        }
+
+        // Decodes an object packed into a byte array
+        public static T DeserializeObjectFromBinary<T>(byte[] Data)
+        {
+            // Create an output object
+            T Output = default(T);
+
+            // Object is an integer
+            if (typeof(T).GetInterfaces().Contains(typeof(IConvertible)))
+            {
+                // Create a generic method wrapper to access deserialization
+                MethodInfo MethodInfo = typeof(Encoding).GetMethod("ByteArrayToInteger", new[] { typeof(byte[]), typeof(int) });
+                Type[] Args = new Type[] { typeof(T) };
+                MethodInfo Method = MethodInfo.MakeGenericMethod(Args);
+
+                // Deserialize integer
+                Output = (T)Method.Invoke(null, new object[] { Data, 0 });
+            }
+
+            // Object is a string
+            else if (typeof(T) == typeof(string))
+            {
+                // Deserialize string length
+                int Length = DeserializeVarInt<int>(Data, 0, out int Offset);
+
+                // Deserialize string
+                Output = (T)Convert.ChangeType(Encoding.ByteArrayToString(Encoding.SplitByteArray(Data, Offset, Length)), typeof(T));
+            }
+
+            // Object is an array
+            else if (typeof(T).IsArray)
+            {
+                // Create a generic method wrapper to access deserialization
+                MethodInfo MethodInfo = typeof(PortableStorage).GetMethod("DeserializeArrayFromBinary");
+                Type[] Args = new Type[] { typeof(T) };
+                MethodInfo Method = MethodInfo.MakeGenericMethod(Args);
+
+                // Deserialize integer
+                Output = (T)Method.Invoke(null, new object[] { Data });
+            }
+
+            // Property is an object
+            else
+            {
+                // Get property list of type
+                var Properties = typeof(T).GetProperties();
+
+                // Create a buffer
+                byte[] Buffer = Encoding.AppendToByteArray(Data, new byte[0]);
+
+                // Loop through object properties
+                foreach (PropertyInfo Property in Properties)
+                {
+                    // Create a generic method wrapper to access deserialization
+                    MethodInfo MethodInfo = typeof(PortableStorage).GetMethod("DeserializeObjectFromBinary");
+                    Type[] Args = new Type[] { Property.PropertyType };
+                    MethodInfo Method = MethodInfo.MakeGenericMethod(Args);
+
+                    // Set object parameter value
+                    var Param = Method.Invoke(null, new object[] { Buffer });
+                    object Temp = Output;
+                    Property.SetValue(Temp, Convert.ChangeType(Param, Property.PropertyType));
+                    Output = (T)Convert.ChangeType(Temp, typeof(T));
+
+                    // Resize buffer
+                    Buffer = Encoding.SplitByteArray(Buffer, Encoding.GetSizeOfObject(Property.GetValue(Output)), Buffer.Length - Encoding.GetSizeOfObject(Property.GetValue(Output)));
+                }
+            }
+
+            // Return output
+            return Output;
+        }
+
+        // Deserializes an array packed into a byte array
+        public static T[] DeserializeArrayFromBinary<T>(byte[] Data)
+        {
+            // Create a list of objects
+            List<T> Output = new List<T>();
+
+            // Get default object size
+            int Size = Encoding.GetSizeOfObject(default(T)); // May not work
+
+            // Get object count
+            int Count = Data.Length / Size;
+
+            // Loop through buffer
+            for (int i = 0; i < Count; i++)
+            {
+                // Split buffer into just what is needed
+                int offset = i * Size;
+                byte[] Buffer = Encoding.SplitByteArray(Data, offset, 24);
+
+                // Create a generic method wrapper to access deserialization
+                MethodInfo MethodInfo = typeof(PortableStorage).GetMethod("DeserializeObjectFromBinary");
+                Type[] Args = new Type[] { typeof(T) };
+                MethodInfo Method = MethodInfo.MakeGenericMethod(Args);
+
+                // Deserialize object
+                T Param = (T)Method.Invoke(null, new object[] { Buffer });
+
+                // Add to list
+                Output.Add(Param);
+            }
+
+            // Return output
+            return Output.ToArray();
         }
     }
 }

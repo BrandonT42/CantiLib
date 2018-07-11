@@ -59,7 +59,7 @@ namespace Canti.CryptoNote.P2P.Commands
             {
                 // Deserialize data
                 //Data = Encoding.DecompressByteArray(Data);
-                return (Response)Encoding.DecodeObject(Data);
+                return Encoding.DecodeObject<Response>(Data);
 
                 // Populate and return new response
                 /*return new Response

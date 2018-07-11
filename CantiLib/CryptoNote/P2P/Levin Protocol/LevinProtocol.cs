@@ -111,10 +111,10 @@ namespace Canti.CryptoNote.P2P
                 Logger?.Log(Level.DEBUG, " - Is Notification: {0}", Command.IsNotification);
                 Logger?.Log(Level.DEBUG, " - Is Response: {0}", Command.IsResponse);
                 Logger?.Log(Level.DEBUG, " - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
-                
+
                 // Deserialize response
                 Commands.CommandHandshake.Response Response = new Commands.CommandHandshake.Response();
-                //Response = Response.Deserialize(Command.Data);
+                Response = Response.Deserialize(Command.Data);
 
                 // Send response
                 // TODO
@@ -218,11 +218,11 @@ namespace Canti.CryptoNote.P2P
             BucketHead2 Header = new BucketHead2
             {
                 Signature = GlobalsConfig.LEVIN_SIGNATURE,
-                ResponseRequired = false,
+                ResponseRequired = true,
                 PayloadSize = (ulong)Data.Length,
                 CommandCode = (uint)CommandCode,
                 ProtocolVersion = LEVIN_PROTOCOL_VER_1,
-                Flags = LEVIN_PACKET_RESPONSE
+                Flags = LEVIN_PACKET_REQUEST
             };
 
             // Debug
