@@ -4,24 +4,51 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
-namespace Canti.CryptoNote.P2P
+// TODO: Utilize a logger to log errors instead of throwing exceptions....
+// Or should I throw exceptions, then listen for them wherever it is I use this class?
+namespace Canti.CryptoNote
 {
+    // A key-value storage solutions for encoding and decoding objects as raw bytes
+    [Serializable]
     internal partial class PortableStorage
     {
         // Dictionary of entries
-        Dictionary<string, object> Entries = new Dictionary<string, object>();
+        internal Dictionary<string, object> Entries = new Dictionary<string, object>();
 
         // Add an entry
         internal bool AddEntry(string Name, object Value)
         {
-            // Get object type
-            SerializationType Type = GetType(Value);
+            // Verify entry is valid
+            if (Value == null) return false;
 
             // Add to entry table
-            if (Type != SerializationType.INVALID) Entries.Add(Name, Value);
+            Entries.Add(Name, Value);
+            return true;
+        }
 
-            // Entry is of invalid type
-            else return false; // TODO - throw error
+        // Adds a new entry as a raw hexstring representation of the object's raw bytes
+        internal bool AddEntryAsBinary(string Name, object Value)
+        {
+            // Verify entry is valid
+            if (Value == null) return false;
+
+            // Create an output array
+            byte[] Output = new byte[0];
+            int Size = 0;
+            if (Value.GetType().IsArray)
+            {
+                Type ArrayType = Value.GetType();
+                foreach (object Val in (Value as Array))
+                    Size += Encoding.GetSizeOfObject(Val);
+            }
+            else Size = Encoding.GetSizeOfObject(Value);
+            Output = Encoding.AppendToByteArray(SerializeVarInt(Size), Output);
+
+            // Serialize object
+            Output = Encoding.AppendToByteArray(SerializeObjectAsBinary(Value), Output);
+
+            // Add as an entry
+            AddEntry(Name, Encoding.ByteArrayToString(Output));
             return true;
         }
 
@@ -35,11 +62,11 @@ namespace Canti.CryptoNote.P2P
             if (IncludeHeader)
             {
                 // Add signatures
-                Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(PORTABLE_STORAGE_SIGNATUREA), Output);
-                Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(PORTABLE_STORAGE_SIGNATUREB), Output);
+                Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(GlobalsConfig.STORAGE_SIGNATUREA), Output);
+                Output = Encoding.AppendToByteArray(Encoding.IntegerToByteArray(GlobalsConfig.STORAGE_SIGNATUREB), Output);
 
                 // Add version number
-                Output = Encoding.AppendToByteArray(new byte[] { PORTABLE_STORAGE_FORMAT_VER }, Output);
+                Output = Encoding.AppendToByteArray(new byte[] { GlobalsConfig.STORAGE_FORMAT_VERSION }, Output);
             }
 
             // Add array length
@@ -60,12 +87,108 @@ namespace Canti.CryptoNote.P2P
         }
 
         // Deserializes a byte array to a storage object
-        internal bool Deserialize(byte[] Data)
+        internal byte[] Deserialize(byte[] Data, bool IncludeHeader = true)
         {
-            //
+            // Verify header
+            int Offset = 0;
+            if (IncludeHeader)
+            {
+                if (Encoding.ByteArrayToInteger<uint>(Data, 0) != GlobalsConfig.STORAGE_SIGNATUREA ||
+                    Encoding.ByteArrayToInteger<uint>(Data, 4) != GlobalsConfig.STORAGE_SIGNATUREB)
+                    throw new Exception(string.Format("Signature mismatch, expected {0}{1}, got {2}{3}",
+                        GlobalsConfig.STORAGE_SIGNATUREA, GlobalsConfig.STORAGE_SIGNATUREB,
+                        Encoding.ByteArrayToInteger<uint>(Data, 0), Encoding.ByteArrayToInteger<uint>(Data, 4)));
+                else if (Data[8] != GlobalsConfig.STORAGE_FORMAT_VERSION)
+                    throw new Exception(string.Format("Version mismatch, expected {0}, got {1}",
+                        GlobalsConfig.STORAGE_FORMAT_VERSION, Data[8]));
+                Offset = 9;
+            }
 
-            // Return result
-            return false;
+            // Get entry count
+            int Count = DeserializeVarInt<int>(Data, Offset, out Offset);
+
+            // Create a buffer containing just the storage contents
+            byte[] Buffer = Encoding.SplitByteArray(Data, Offset, Data.Length - Offset);
+
+            // Loop through data until it's empty
+            for (int i = 0; i < Count; i++)
+            {
+                // Deserialize entry
+                Buffer = DeserializeEntry(Buffer);
+            }
+
+            // Return successful
+            return Buffer;
+        }
+
+        // Deserializes an entry from a byte array and adds it to storage
+        private byte[] DeserializeEntry(byte[] Buffer)
+        {
+            // Get entry name length
+            int NameLength = Encoding.ByteArrayToInteger<byte>(Buffer, 0, 1);//DeserializeVarInt<int>(Buffer, 0, out int Offset);
+            int Offset = 1;
+            if (NameLength < 1 || NameLength > MAX_STRING_LEN_POSSIBLE) throw new Exception("Name size exceeds allowed string bounds");
+
+            // Get entry name
+            string Name = Encoding.ByteArrayToString(Buffer, Offset, NameLength);
+            Offset += NameLength;
+            Buffer = Encoding.SplitByteArray(Buffer, Offset, Buffer.Length - Offset);
+
+            // Get object type
+            SerializationType Type = GetType(Buffer);
+            if ((int)Type < 1 || (int)Type > 14) throw new Exception("Invalid serialization type caught: " +
+                Encoding.ByteArrayToHexString(Encoding.SplitByteArray(Buffer, 1, Buffer.Length - 1)));
+            Buffer = Encoding.SplitByteArray(Buffer, 1, Buffer.Length - 1);
+
+            // Create an entry object
+            var Output = new object();
+
+            // Object is a string
+            if (Type == SerializationType.STRING)
+            {
+                // Deserialize string length
+                int Length = DeserializeVarInt<int>(Buffer, 0, out Offset);
+
+                // Deserialize string
+                Output = Encoding.ByteArrayToString(Encoding.SplitByteArray(Buffer, Offset, Length));
+
+                // Resize buffer
+                Offset = 1 + (Output as string).Length;
+                if (Buffer.Length - Offset > 0) Buffer = Encoding.SplitByteArray(Buffer, Offset, Buffer.Length - Offset);
+            }
+
+            // Object is an integer
+            else if ((int)Type >= 1 && (int)Type <= 9)
+            {
+                // Create a generic method wrapper to access deserialization
+                MethodInfo MethodInfo = typeof(Encoding).GetMethod("ByteArrayToInteger", new[] { typeof(byte[]), typeof(int) });
+                Type[] Args = new Type[] { ConvertSerializationType(Type) };
+                MethodInfo Method = MethodInfo.MakeGenericMethod(Args);
+
+                // Deserialize integer
+                Output = Method.Invoke(null, new object[] { Buffer, 0 });
+
+                // Resize buffer
+                Offset = Encoding.GetSizeOfObject(Output);
+                if (Buffer.Length - Offset > 0) Buffer = Encoding.SplitByteArray(Buffer, Offset, Buffer.Length - Offset);
+            }
+
+            // Object is an object
+            else if (Type == SerializationType.OBJECT)
+            {
+                // Create a new storage object
+                PortableStorage Storage = new PortableStorage();
+
+                // Deserialize entry
+                Buffer = Storage.Deserialize(Buffer, false);
+                Output = Storage;
+            }
+
+            // Add to entries
+            Entries.Add(Name, Output);
+
+            // Return buffer output
+            return Buffer;
         }
 
         // Gets an object's serialization type
@@ -89,13 +212,36 @@ namespace Canti.CryptoNote.P2P
             else Type = SerializationType.OBJECT;
             return Type;
         }
+        internal static SerializationType GetType(byte[] Value)
+        {
+            // Get serialization type
+            byte Type = Encoding.ByteArrayToInteger<byte>(Value, 0);
+            return (SerializationType)Type;
+        }
+        internal static Type ConvertSerializationType(SerializationType Type)
+        {
+            if (Type == SerializationType.ULONG) return typeof(ulong);
+            else if (Type == SerializationType.LONG) return typeof(long);
+            else if (Type == SerializationType.UINT) return typeof(uint);
+            else if (Type == SerializationType.INT) return typeof(int);
+            else if (Type == SerializationType.USHORT) return typeof(ushort);
+            else if (Type == SerializationType.SHORT) return typeof(short);
+            else if (Type == SerializationType.BYTE) return typeof(byte);
+            else if (Type == SerializationType.SBYTE) return typeof(sbyte);
+            else if (Type == SerializationType.DOUBLE) return typeof(double);
+            else if (Type == SerializationType.BOOL) return typeof(bool);
+            else if (Type == SerializationType.STRING) return typeof(string);
+            else if (Type == SerializationType.ARRAY) return typeof(Array);
+            else if (Type == SerializationType.OBJECT) return typeof(object);
+            else return null;
+        }
 
         // Serializes an object to a byte array
         internal static byte[] SerializeObject(object Value, bool IncludeType = true)
         {
             // Create an output array
             byte[] Output = new byte[0];
-            
+
             // Add object type
             SerializationType Type = GetType(Value);
             if (IncludeType) Output = new byte[] { (byte)Type };
@@ -104,70 +250,47 @@ namespace Canti.CryptoNote.P2P
             byte[] EntryBytes = new byte[0];
 
             // Type is 64 bit
-            if (Type == SerializationType.LONG || Type == SerializationType.ULONG)
+            if (Value.GetType() == typeof(long) || Value.GetType() == typeof(ulong))
             {
                 // Encode bytes
                 ulong Input = Convert.ToUInt64(Value);
-                EntryBytes = new byte[8];
-                EntryBytes[0] = (byte)Input;
-                EntryBytes[1] = (byte)((Input >> 8) & 0xFF);
-                EntryBytes[2] = (byte)((Input >> 16) & 0xFF);
-                EntryBytes[3] = (byte)((Input >> 24) & 0xFF);
-                EntryBytes[4] = (byte)((Input >> 32) & 0xFF);
-                EntryBytes[5] = (byte)((Input >> 40) & 0xFF);
-                EntryBytes[6] = (byte)((Input >> 48) & 0xFF);
-                EntryBytes[7] = (byte)((Input >> 56) & 0xFF);
+                EntryBytes = Encoding.IntegerToByteArray(Input);
             }
 
             // Type is 32 bit
-            else if (Type == SerializationType.INT || Type == SerializationType.UINT)
+            else if (Value.GetType() == typeof(int) || Value.GetType() == typeof(uint))
             {
                 // Encode bytes
                 uint Input = Convert.ToUInt32(Value);
-                EntryBytes = new byte[4];
-                EntryBytes[0] = (byte)Input;
-                EntryBytes[1] = (byte)((Input >> 8) & 0xFF);
-                EntryBytes[2] = (byte)((Input >> 16) & 0xFF);
-                EntryBytes[3] = (byte)((Input >> 24) & 0xFF);
+                EntryBytes = Encoding.IntegerToByteArray(Input);
             }
 
             // Type is 16 bit
-            else if (Type == SerializationType.SHORT || Type == SerializationType.USHORT)
+            else if (Value.GetType() == typeof(short) || Value.GetType() == typeof(ushort))
             {
                 // Encode bytes
                 ushort Input = Convert.ToUInt16(Value);
-                EntryBytes = new byte[2];
-                EntryBytes[0] = (byte)Input;
-                EntryBytes[1] = (byte)((Input >> 8) & 0xFF);
+                EntryBytes = Encoding.IntegerToByteArray(Input);
             }
 
             // Type is 8 bit
-            else if (Type == SerializationType.SBYTE || Type == SerializationType.BYTE)
+            else if (Value.GetType() == typeof(byte) || Value.GetType() == typeof(sbyte))
             {
                 // Encode bytes
                 byte Input = Convert.ToByte(Value);
-                EntryBytes = new byte[1];
-                EntryBytes[0] = Input;
+                EntryBytes = Encoding.IntegerToByteArray(Input);
             }
 
             // Type is double
-            else if (Type == SerializationType.DOUBLE)
+            else if (Value.GetType() == typeof(double))
             {
                 // Encode bytes
-                ulong Input = (ulong)Convert.ToDouble(Value);
-                EntryBytes = new byte[8];
-                EntryBytes[0] = (byte)Input;
-                EntryBytes[1] = (byte)((Input >> 8) & 0xFF);
-                EntryBytes[2] = (byte)((Input >> 16) & 0xFF);
-                EntryBytes[3] = (byte)((Input >> 24) & 0xFF);
-                EntryBytes[4] = (byte)((Input >> 32) & 0xFF);
-                EntryBytes[5] = (byte)((Input >> 40) & 0xFF);
-                EntryBytes[6] = (byte)((Input >> 48) & 0xFF);
-                EntryBytes[7] = (byte)((Input >> 56) & 0xFF);
+                double Input = Convert.ToDouble(Value);
+                EntryBytes = Encoding.IntegerToByteArray(Input);
             }
 
             // Type is string
-            else if (Type == SerializationType.STRING)
+            else if (Value.GetType() == typeof(string))
             {
                 // Check string length
                 if (((string)Value).Length > MAX_STRING_LEN_POSSIBLE) EntryBytes = new byte[0];
@@ -180,14 +303,21 @@ namespace Canti.CryptoNote.P2P
             }
 
             // Type is bool
-            else if (Type == SerializationType.BOOL)
+            else if (Value.GetType() == typeof(bool))
             {
                 // Encode bytes
                 EntryBytes = new byte[1] { (bool)Value ? (byte)1 : (byte)0 };
             }
 
+            // Type is array
+            else if (Value.GetType().IsArray)
+            {
+                // Encode bytes
+                EntryBytes = SerializeArray((Array)Value);
+            }
+
             // Type is object
-            else if (Type == SerializationType.OBJECT)
+            else
             {
                 // Check if object has serialization method
                 Type ObjectType = Value.GetType();
@@ -195,14 +325,7 @@ namespace Canti.CryptoNote.P2P
                 if (Method == null) throw new Exception("Could not serialize object: No Serialize() method found in object type " + ObjectType.Name);
 
                 // Encode bytes
-                EntryBytes = (byte[])Method.Invoke(Value, null); // TODO - Fix this shit ???
-            }
-
-            // Type is array
-            else if (Type == SerializationType.ARRAY)
-            {
-                // Encode bytes
-                EntryBytes = SerializeArray((Array)Value);
+                EntryBytes = (byte[])Method.Invoke(Value, null);
             }
 
             // Return result
@@ -216,10 +339,6 @@ namespace Canti.CryptoNote.P2P
             // Create an output buffer
             byte[] Output = new byte[0];
 
-            // Verify type
-            SerializationType Type = GetType(Value);
-            if ((int)Type < (int)SerializationType.LONG || (int)Type > (int)SerializationType.BYTE) return new byte[0];
-
             // Check varint size
             ulong Size = Convert.ToUInt64(Value);
 
@@ -232,8 +351,7 @@ namespace Canti.CryptoNote.P2P
                 Input |= PORTABLE_RAW_SIZE_MARK_BYTE;
 
                 // Encode bytes to buffer
-                Output = new byte[1];
-                Output[0] = (byte)Input;
+                Output = Encoding.IntegerToByteArray(Input);
             }
 
             // Value is 16 bit
@@ -245,9 +363,7 @@ namespace Canti.CryptoNote.P2P
                 Input |= PORTABLE_RAW_SIZE_MARK_WORD;
 
                 // Encode bytes to buffer
-                Output = new byte[2];
-                Output[0] = (byte)Input;
-                Output[1] = (byte)((Input >> 8) & 0xFF);
+                Output = Encoding.IntegerToByteArray(Input);
             }
 
             // Value is 32 bit
@@ -255,15 +371,11 @@ namespace Canti.CryptoNote.P2P
             {
                 // Encode varint
                 uint Converted = Convert.ToUInt32(Value);
-                uint Input = (uint)(Converted << 2);
+                uint Input = Converted << 2;
                 Input |= PORTABLE_RAW_SIZE_MARK_DWORD;
 
                 // Encode bytes to buffer
-                Output = new byte[4];
-                Output[0] = (byte)Input;
-                Output[1] = (byte)((Input >> 8) & 0xFF);
-                Output[2] = (byte)((Input >> 16) & 0xFF);
-                Output[3] = (byte)((Input >> 24) & 0xFF);
+                Output = Encoding.IntegerToByteArray(Input);
             }
 
             // Value is 64 bit
@@ -271,19 +383,11 @@ namespace Canti.CryptoNote.P2P
             {
                 // Encode varint
                 ulong Converted = Convert.ToUInt64(Value);
-                ulong Input = (ulong)(Converted << 2);
+                ulong Input = Converted << 2;
                 Input |= PORTABLE_RAW_SIZE_MARK_INT64;
 
                 // Encode bytes to buffer
-                Output = new byte[8];
-                Output[0] = (byte)Input;
-                Output[1] = (byte)((Input >> 8) & 0xFF);
-                Output[2] = (byte)((Input >> 16) & 0xFF);
-                Output[3] = (byte)((Input >> 24) & 0xFF);
-                Output[4] = (byte)((Input >> 32) & 0xFF);
-                Output[5] = (byte)((Input >> 40) & 0xFF);
-                Output[6] = (byte)((Input >> 48) & 0xFF);
-                Output[7] = (byte)((Input >> 56) & 0xFF);
+                Output = Encoding.IntegerToByteArray(Input);
             }
 
             // Return encoded varint buffer
@@ -433,25 +537,6 @@ namespace Canti.CryptoNote.P2P
             return Output;
         }
 
-        // Adds a new entry as a raw hexstring representation of the object's raw bytes
-        internal bool AddEntryAsBinary(string Name, object Value)
-        {
-            // Verify array is valid
-            if (Value == null) return false;
-            else if (!Value.GetType().IsArray) return false;
-
-            // Create an output array
-            byte[] Output = new byte[0];
-            Output = Encoding.AppendToByteArray(SerializeVarInt(Encoding.GetSizeOfObject(Value)), Output);
-
-            // Serialize object
-            Output = Encoding.AppendToByteArray(SerializeObjectAsBinary(Value), Output);
-
-            // Add as an entry
-            AddEntry(Name, Encoding.ByteArrayToString(Output));
-            return true;
-        }
-
         // Decodes an object packed into a byte array
         public static T DeserializeObjectFromBinary<T>(byte[] Data)
         {
@@ -556,6 +641,35 @@ namespace Canti.CryptoNote.P2P
             }
 
             // Return output
+            return Output.ToArray();
+        }
+        public T[] DeserializeArrayFromBinary<T>(string Name)
+        {
+            // Get string
+            string Value = (string)Entries[Name];
+
+            // Create a generic method wrapper to access deserialization
+            MethodInfo MethodInfo = typeof(PortableStorage).GetMethod("DeserializeArrayFromBinary", new[] { typeof(byte[]) });
+            Type[] Args = new Type[] { typeof(T) };
+            MethodInfo Method = MethodInfo.MakeGenericMethod(Args);
+
+            // Deserialize integer
+            return (T[])Method.Invoke(null, new object[] { Encoding.StringToByteArray(Value) });
+        }
+
+        // Gets an entry from the entry dictionary
+        public object GetEntry(string Name)
+        {
+            if (Entries.ContainsKey(Name)) return Entries[Name];
+            else return null;
+        }
+
+        // Gets all entries from the entry dictionary as an object array
+        public object[] GetEntries()
+        {
+            List<object> Output = new List<object>();
+            foreach (KeyValuePair<string, object> Entry in Entries)
+                Output.Add(Entry.Value);
             return Output.ToArray();
         }
     }

@@ -16,6 +16,6 @@ namespace Canti.CryptoNote.P2P
     internal interface ICommandResponseBase<T>
     {
         // Deseriaizes a byte array to a command response
-        T Deserialize(byte[] Data);
+        //T Deserialize(byte[] Data);
     }
 }

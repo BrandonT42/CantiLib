@@ -110,14 +110,19 @@ namespace Canti.CryptoNote.P2P
                 Logger?.Log(Level.DEBUG, " - Command Code: {0}", Command.CommandCode);
                 Logger?.Log(Level.DEBUG, " - Is Notification: {0}", Command.IsNotification);
                 Logger?.Log(Level.DEBUG, " - Is Response: {0}", Command.IsResponse);
-                Logger?.Log(Level.DEBUG, " - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
+                Logger?.Log(Level.DEBUG, " - Data: {0} bytes", Command.Data.Length);
 
                 // Deserialize response
-                Commands.CommandHandshake.Response Response = new Commands.CommandHandshake.Response();
-                Response = Response.Deserialize(Command.Data);
+                if (Command.CommandCode == Commands.CommandHandshake.Id)
+                {
+                    Commands.CommandHandshake.HandleCommand(Command, Server.Logger);
+                }
 
                 // Send response
-                // TODO
+                if (Header.ResponseRequired)
+                {
+                    // TODO
+                }
 
                 // Set new read status and clear previous request
                 Peer.ReadStatus = PacketReadStatus.Head;
@@ -248,7 +253,7 @@ namespace Canti.CryptoNote.P2P
             Logger?.Log(Level.DEBUG, " - Command Code: {0}", Command.CommandCode);
             Logger?.Log(Level.DEBUG, " - Is Notification: {0}", Command.IsNotification);
             Logger?.Log(Level.DEBUG, " - Is Response: {0}", Command.IsResponse);
-            Logger?.Log(Level.DEBUG, " - Data: {0}", Encoding.ByteArrayToHexString(Command.Data));
+            Logger?.Log(Level.DEBUG, " - Data: {0} bytes", Command.Data.Length);
 
             // Send header packet
             //Connection.Broadcast(Header.Serialize());
@@ -263,23 +268,6 @@ namespace Canti.CryptoNote.P2P
         {
             // Return the serialized byte array
             return Data.Serialize();
-        }
-
-        // Decodes a command to a specified type
-        internal T Decode<T>(byte[] Data)
-        {
-            // Verify type
-            if (!typeof(ICommandResponseBase<T>).IsAssignableFrom(typeof(T)))
-            {
-                Logger?.Log(Level.DEBUG, "Failed to decode command response - incorrect type: {0}, expected type ICommandResponseBase<T>", typeof(T).FullName);
-                return default(T);
-            }
-
-            // Create a default object of the deserialized type
-            ICommandResponseBase<T> O = default(T) as ICommandResponseBase<T>;
-
-            // Return the deserialized object
-            return O.Deserialize(Data);
         }
     }
 }

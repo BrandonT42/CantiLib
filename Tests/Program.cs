@@ -17,14 +17,14 @@ namespace Canti.Tests
         {
             // Custom incoming data handling
             Packet Packet = (Packet)sender;
-            Logger.Log(Level.DEBUG, "Received packet from {0}: {1}", Packet.Peer.Address, Encoding.ByteArrayToHexString(Packet.Data));
+            //Logger.Log(Level.DEBUG, "Received packet from {0}: {1}", Packet.Peer.Address, Encoding.ByteArrayToHexString(Packet.Data));
         }
 
         static void DataSent(object sender, EventArgs e)
         {
             // Custom outgoing data handling
             Packet Packet = (Packet)sender;
-            Logger.Log(Level.DEBUG, "Sent packet to {0}: {1}", Packet.Peer.Address, Encoding.ByteArrayToHexString(Packet.Data));
+            //Logger.Log(Level.DEBUG, "Sent packet to {0}: {1}", Packet.Peer.Address, Encoding.ByteArrayToHexString(Packet.Data));
         }
 
         static void ServerError(object sender, EventArgs e)

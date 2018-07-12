@@ -81,6 +81,11 @@ namespace Canti.Data
             foreach (byte b in Input) Output += (char)b;
             return Output;
         }
+        public static string ByteArrayToString(byte[] Input, int Offset, int Length)
+        {
+            byte[] Buffer = SplitByteArray(Input, Offset, Length);
+            return ByteArrayToString(Buffer);
+        }
 
         // Encodes a string to a hex string
         public static string StringToHexString(string Input)

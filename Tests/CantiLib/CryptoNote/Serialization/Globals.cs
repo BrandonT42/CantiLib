@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Canti.CryptoNote.P2P
+namespace Canti.CryptoNote
 {
     internal partial class PortableStorage
     {
         // Storage headers
-        internal const uint PORTABLE_STORAGE_SIGNATUREA = 0x01011101;
-        internal const uint PORTABLE_STORAGE_SIGNATUREB = 0x01020101; // Bender's nightmare 
-        internal const byte PORTABLE_STORAGE_FORMAT_VER = 1;
+        
 
         // Constants for varint conversion
         internal const byte PORTABLE_RAW_SIZE_MARK_MASK = 0x03;

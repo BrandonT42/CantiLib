@@ -16,6 +16,11 @@ namespace Canti.CryptoNote
         internal const int     LEVIN_MAX_PACKET_SIZE    = 100000000; // 100 MB
         internal const int     LEVIN_COMMANDS_BASE      = 1000; // Levin protocol packet command codes are added to this value
 
+        // Portable Storage
+        internal const uint    STORAGE_SIGNATUREA       = 0x01011101; // Bender's Nightmare (Part 1)
+        internal const uint    STORAGE_SIGNATUREB       = 0x01020101; // Bender's Nightmare (Part 2) 
+        internal const byte    STORAGE_FORMAT_VERSION   = 1;
+
         // CryptoNote
         internal const int     CRYPTONOTE_COMMANDS_BASE = 2000; // Cryptonote protocol packet command codes are added to this value
     }
