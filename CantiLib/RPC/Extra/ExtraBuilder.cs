@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Canti.Data;
 
-namespace Canti.CryptoNote
+namespace Canti.Blockchain
 {
     public class ExtraBuilder
     {

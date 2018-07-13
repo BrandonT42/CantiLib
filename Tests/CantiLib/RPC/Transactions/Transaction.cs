@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Canti.CryptoNote
+namespace Canti.Blockchain
 {
     internal class TransactionContainer
     {

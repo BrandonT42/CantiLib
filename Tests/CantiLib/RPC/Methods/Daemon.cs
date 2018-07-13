@@ -4,7 +4,7 @@ using System.Text;
 using Canti.Data;
 using Canti.Utilities;
 
-namespace Canti.CryptoNote.RPC
+namespace Canti.Blockchain.RPC
 {
     public partial class Methods
     {

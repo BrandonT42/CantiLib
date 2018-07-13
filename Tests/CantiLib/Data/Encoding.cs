@@ -12,7 +12,8 @@ namespace Canti.Data
         // Gets the byte size of an object
         public static int GetSizeOfObject(object Input)
         {
-            return System.Runtime.InteropServices.Marshal.SizeOf(Input);
+            try { return System.Runtime.InteropServices.Marshal.SizeOf(Input); }
+            catch { return -1;  }
         }
 
         // Gets the smallest integer type an integer will fit in
@@ -70,7 +71,7 @@ namespace Canti.Data
         public static byte[] StringToByteArray(string Input)
         {
             byte[] Output = new byte[0];
-            foreach (char c in Input.ToCharArray()) Output = AppendToByteArray(new byte[] { (byte)c }, Output);
+            foreach (char c in Input.ToCharArray()) Output = AppendToByteArray((byte)c, Output);
             return Output;
         }
 
@@ -210,6 +211,14 @@ namespace Canti.Data
             byte[] NewBytes = new byte[Source.LongLength + Destination.LongLength];
             Buffer.BlockCopy(Destination, 0, NewBytes, 0, Destination.Length);
             Buffer.BlockCopy(Source, 0, NewBytes, Destination.Length, Source.Length);
+            return NewBytes;
+        }
+
+        public static byte[] AppendToByteArray(byte Source, byte[] Destination)
+        {
+            byte[] NewBytes = new byte[1 + Destination.LongLength];
+            Buffer.BlockCopy(Destination, 0, NewBytes, 0, Destination.Length);
+            Buffer.BlockCopy(new byte[] { Source }, 0, NewBytes, Destination.Length, 1);
             return NewBytes;
         }
         #endregion

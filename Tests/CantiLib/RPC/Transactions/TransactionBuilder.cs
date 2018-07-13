@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Canti.CryptoNote.RPC;
+using Canti.Blockchain.RPC;
 using Canti.Utilities;
 
-namespace Canti.CryptoNote
+namespace Canti.Blockchain
 {
     public class TransactionBuilder
     {

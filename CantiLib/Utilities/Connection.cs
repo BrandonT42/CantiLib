@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Canti.Utilities
+﻿namespace Canti.Utilities
 {
     public class Connection
     {

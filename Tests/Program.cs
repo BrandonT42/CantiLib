@@ -1,9 +1,11 @@
 ﻿using Canti.Utilities;
 using Canti.Data;
-using Canti.CryptoNote.P2P;
+using Canti.Blockchain.P2P;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Canti.Blockchain;
+using Canti.Blockchain.Crypto;
 
 namespace Canti.Tests
 {
@@ -47,6 +49,20 @@ namespace Canti.Tests
             Logger.Log(Level.DEBUG, "Peer connection lost with {0}", Peer.Address);
         }
 
+        static void ServerStarted(object sender, EventArgs e)
+        {
+            // Custom server start handling
+            Server Server = (Server)sender;
+            Logger.Log(Level.INFO, "Server started on port {0}, peer ID of {1}", Server.Port, Server.PeerId);
+        }
+
+        static void ServerStopped(object sender, EventArgs e)
+        {
+            // Custom server stopped handling
+            Server Server = (Server)sender;
+            Logger.Log(Level.INFO, "Server stopped", Server.Port, Server.PeerId);
+        }
+
         static void Main(string[] args)
         {
             // Parse commandline arguments
@@ -58,8 +74,10 @@ namespace Canti.Tests
 
             // Add logger to server
             Server.Logger = Logger;
-            
+
             // Bind event handlers
+            Server.OnStart = ServerStarted;
+            Server.OnStop = ServerStopped;
             Server.OnDataReceived += DataReceived;
             Server.OnDataSent += DataSent;
             Server.OnError += ServerError;
@@ -67,7 +85,6 @@ namespace Canti.Tests
 
             // Start server
             Server.Start(Port);
-            Logger.Log(Level.INFO, "Server started on port {0}", Server.Port);
 
             // Enter into a loop
             int MenuSelection = 0;
@@ -88,28 +105,51 @@ namespace Canti.Tests
                 else if (MenuSelection == 2)
                 {
                     // Create a response
-                    CryptoNote.P2P.Commands.CommandHandshake.Request Request = new CryptoNote.P2P.Commands.CommandHandshake.Request
+                    Blockchain.Commands.Handshake.Request Request = new Blockchain.Commands.Handshake.Request
                     {
                         NodeData = new NodeData()
                         {
-                            NetworkId = CryptoNote.GlobalsConfig.P2P_NETWORK_ID,
+                            NetworkId = GlobalsConfig.NETWORK_ID,
                             Version = 1,
                             Port = 8090,
-                            LocalTime = (ulong)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds,
-                            PeerId = BitConverter.ToUInt64(new byte[] { 0x58, 0xfd, 0xde, 0xb8, 0xa4, 0x54, 0x6f, 0xf4 })
+                            LocalTime = GeneralUtilities.GetTimestamp(),
+                            PeerId = Server.PeerId
                         },
                         PayloadData = new CoreSyncData()
                         {
-                            CurrentHeight = 605077,
-                            TopId = Encoding.HexStringToString("dd3cc6212ba718412dd17bdba50564f6dc02ed05f81fe9b5a99e0eb0c35d72a0")
+                            CurrentHeight = Globals.DAEMON_BLOCK_HEIGHT,
+                            TopId = Globals.DAEMON_TOP_ID
                         }
                     };
 
                     // Get body bytes
                     byte[] BodyBytes = Request.Serialize();
 
+                    // Create a header
+                    BucketHead2 Header = new BucketHead2
+                    {
+                        Signature = GlobalsConfig.LEVIN_SIGNATURE,
+                        ResponseRequired = false,
+                        PayloadSize = (ulong)BodyBytes.Length,
+                        CommandCode = (uint)Blockchain.Commands.Handshake.Id,
+                        ProtocolVersion = GlobalsConfig.LEVIN_VERSION,
+                        Flags = LevinProtocol.LEVIN_PACKET_RESPONSE,
+                        ReturnCode = LevinProtocol.LEVIN_RETCODE_SUCCESS
+                    };
+
+                    Logger?.Log(Level.DEBUG, "[OUT] Sending Handshake Request:");
+                    Logger?.Log(Level.DEBUG, "- Node Data:");
+                    Logger?.Log(Level.DEBUG, "  - Network ID: {0}", Encoding.StringToHexString(Request.NodeData.NetworkId));
+                    Logger?.Log(Level.DEBUG, "  - Peer ID: {0}", Request.NodeData.PeerId);
+                    Logger?.Log(Level.DEBUG, "  - Version: {0}", Request.NodeData.Version);
+                    Logger?.Log(Level.DEBUG, "  - Local Time: {0}", Request.NodeData.LocalTime);
+                    Logger?.Log(Level.DEBUG, "  - Port: {0}", Request.NodeData.Port);
+                    Logger?.Log(Level.DEBUG, "- Core Sync Data:");
+                    Logger?.Log(Level.DEBUG, "  - Current Height: {0}", Request.PayloadData.CurrentHeight);
+                    Logger?.Log(Level.DEBUG, "  - Top ID: {0}", Encoding.StringToHexString(Request.PayloadData.TopId));
+
                     // Send notification
-                    Server.Context.SendMessageAll(CryptoNote.P2P.Commands.CommandHandshake.Id, BodyBytes);
+                    Server.Broadcast(Encoding.AppendToByteArray(BodyBytes, Header.Serialize()));
                 }
 
                 // Show peer list
