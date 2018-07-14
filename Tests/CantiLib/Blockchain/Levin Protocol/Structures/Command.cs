@@ -1,4 +1,9 @@
-﻿namespace Canti.Blockchain
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+namespace Canti.Blockchain
 {
     // Levin command structure
     internal struct Command

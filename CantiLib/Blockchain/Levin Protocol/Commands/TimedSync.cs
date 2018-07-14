@@ -1,4 +1,9 @@
-﻿using Canti.Data;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Data;
 using Canti.Utilities;
 using System;
 
@@ -93,7 +98,8 @@ namespace Canti.Blockchain.Commands
                 Request Request = Request.Deserialize(Command.Data);
 
                 // debug
-                Context.Logger?.Log(Level.DEBUG, "[IN] Received Timed Sync Request:");
+                Context.Logger?.Log(Level.DEBUG, "[IN] Received \"Timed Sync\" Request:");
+                Context.Logger?.Log(Level.DEBUG, "- Response Requested: {0}", !Command.IsNotification);
                 Context.Logger?.Log(Level.DEBUG, "- Core Sync Data:");
                 Context.Logger?.Log(Level.DEBUG, "  - Current Height: {0}", Request.PayloadData.CurrentHeight);
                 Context.Logger?.Log(Level.DEBUG, "  - Top ID: {0}", Encoding.StringToHexString(Request.PayloadData.TopId));
@@ -116,7 +122,7 @@ namespace Canti.Blockchain.Commands
                 };
 
                 // debug
-                Context.Logger?.Log(Level.DEBUG, "[OUT] Sending Timed Sync Response:");
+                Context.Logger?.Log(Level.DEBUG, "[OUT] Sending \"Timed Sync\" Response:");
                 Context.Logger?.Log(Level.DEBUG, "- Local Time: {0}", Response.LocalTime);
                 Context.Logger?.Log(Level.DEBUG, "- Core Sync Data:");
                 Context.Logger?.Log(Level.DEBUG, "  - Current Height: {0}", Response.PayloadData.CurrentHeight);
@@ -135,7 +141,8 @@ namespace Canti.Blockchain.Commands
                 Response Response = Response.Deserialize(Command.Data);
 
                 // debug
-                Context.Logger?.Log(Level.DEBUG, "[IN] Received Timed Sync Response:");
+                Context.Logger?.Log(Level.DEBUG, "[IN] Received \"Timed Sync\" Response:");
+                Context.Logger?.Log(Level.DEBUG, "- Response Requested: {0}", !Command.IsNotification);
                 Context.Logger?.Log(Level.DEBUG, "- Local Time: {0}", Response.LocalTime);
                 Context.Logger?.Log(Level.DEBUG, "- Core Sync Data:");
                 Context.Logger?.Log(Level.DEBUG, "  - Current Height: {0}", Response.PayloadData.CurrentHeight);

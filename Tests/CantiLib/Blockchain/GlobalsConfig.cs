@@ -1,11 +1,17 @@
-﻿using Canti.Data;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Data;
 
 namespace Canti.Blockchain
 {
     class GlobalsConfig
     {
         // Network
-        internal static string NETWORK_ID               = Encoding.ByteArrayToString(new byte[] { 0xb5, 0x0c, 0x4a, 0x6c, 0xcf, 0x52, 0x57, 0x41, 0x65, 0xf9, 0x91, 0xa4, 0xb6, 0xc1, 0x43, 0xe9 });
+        //internal static string NETWORK_ID               = Encoding.ByteArrayToString(new byte[] { 0xb5, 0x0c, 0x4a, 0x6c, 0xcf, 0x52, 0x57, 0x41, 0x65, 0xf9, 0x91, 0xa4, 0xb6, 0xc1, 0x43, 0xe9 }); // TurtleCoin
+        internal static string NETWORK_ID                 = Encoding.ByteArrayToString(new byte[] { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf0 }); // Athena Network
         internal static string[] SEED_NODES             = {
                                                               "174.138.68.141:11897", // Rock
                                                               "145.239.88.119:11999", // Cision

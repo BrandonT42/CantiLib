@@ -1,4 +1,9 @@
-﻿namespace Canti.Utilities
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+namespace Canti.Utilities
 {
     public class Connection
     {

@@ -1,4 +1,9 @@
-﻿using Canti.Data;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+
+
+// Please see the included LICENSE file for more information.using Canti.Data;
 using Canti.Utilities;
 using System;
 
@@ -89,6 +94,9 @@ namespace Canti.Blockchain.Commands
         // Process incoming command instance
         internal static void Invoke(LevinProtocol Context, LevinPeer Peer, Command Command)
         {
+            // Debug
+            Peer.State = PeerState.Verified;
+
             // Command is a request
             if (!Command.IsResponse)
             {
@@ -96,7 +104,8 @@ namespace Canti.Blockchain.Commands
                 Request Request = Request.Deserialize(Command.Data);
 
                 // debug
-                Context.Logger?.Log(Level.DEBUG, "[IN] Received Handshake Request:");
+                Context.Logger?.Log(Level.DEBUG, "[IN] Received \"Handshake\" Request:");
+                Context.Logger?.Log(Level.DEBUG, "- Response Requested: {0}", !Command.IsNotification);
                 Context.Logger?.Log(Level.DEBUG, "- Node Data:");
                 Context.Logger?.Log(Level.DEBUG, "  - Network ID: {0}", Encoding.StringToHexString(Request.NodeData.NetworkId));
                 Context.Logger?.Log(Level.DEBUG, "  - Peer ID: {0}", Request.NodeData.PeerId);
@@ -108,7 +117,6 @@ namespace Canti.Blockchain.Commands
                 Context.Logger?.Log(Level.DEBUG, "  - Top ID: {0}", Encoding.StringToHexString(Request.PayloadData.TopId));
 
                 // TODO: Do something with request data
-                Peer.State = PeerState.Verified;
 
                 // TODO: Do some processing in here, make sure the packet isn't a notification for some reason,
                 //       make sure peer isn't duplicate, etc.
@@ -133,7 +141,7 @@ namespace Canti.Blockchain.Commands
                 };
 
                 // debug
-                Context.Logger?.Log(Level.DEBUG, "[OUT] Sending Handshake Response:");
+                Context.Logger?.Log(Level.DEBUG, "[OUT] Sending \"Handshake\" Response:");
                 Context.Logger?.Log(Level.DEBUG, "- Node Data:");
                 Context.Logger?.Log(Level.DEBUG, "  - Network ID: {0}", Encoding.StringToHexString(Response.NodeData.NetworkId));
                 Context.Logger?.Log(Level.DEBUG, "  - Peer ID: {0}", Response.NodeData.PeerId);
@@ -157,7 +165,8 @@ namespace Canti.Blockchain.Commands
                 Response Response = Response.Deserialize(Command.Data);
 
                 // debug
-                Context.Logger?.Log(Level.DEBUG, "[IN] Received Handshake Response:");
+                Context.Logger?.Log(Level.DEBUG, "[IN] Received \"Handshake\" Response:");
+                Context.Logger?.Log(Level.DEBUG, "- Response Requested: {0}", !Command.IsNotification);
                 Context.Logger?.Log(Level.DEBUG, "- Node Data:");
                 Context.Logger?.Log(Level.DEBUG, "  - Network ID: {0}", Encoding.StringToHexString(Response.NodeData.NetworkId));
                 Context.Logger?.Log(Level.DEBUG, "  - Peer ID: {0}", Response.NodeData.PeerId);
@@ -171,7 +180,6 @@ namespace Canti.Blockchain.Commands
                 Context.Logger?.Log(Level.DEBUG, "  - Entries: {0}", Response.LocalPeerlist.Length);
 
                 // TODO: Do something with response data
-                Peer.State = PeerState.Verified;
             }
         }
     }

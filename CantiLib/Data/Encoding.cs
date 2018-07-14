@@ -1,4 +1,9 @@
-﻿using System;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Runtime.Serialization.Formatters.Binary;

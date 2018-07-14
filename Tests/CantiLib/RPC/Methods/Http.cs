@@ -1,4 +1,9 @@
-﻿using Canti.Data;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Data;
 using Canti.Utilities;
 using System;
 using System.Collections.Generic;

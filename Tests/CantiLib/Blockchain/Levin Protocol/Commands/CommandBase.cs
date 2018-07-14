@@ -1,4 +1,9 @@
-﻿// Contains command base structs that can later be inherited
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+// Contains command base structs that can later be inherited
 namespace Canti.Blockchain
 {
     // Contains serialization requirement for command request structures

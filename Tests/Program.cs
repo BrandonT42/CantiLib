@@ -1,4 +1,9 @@
-﻿using Canti.Utilities;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Utilities;
 using Canti.Data;
 using Canti.Blockchain.P2P;
 using System;
@@ -39,14 +44,14 @@ namespace Canti.Tests
         {
             // Custom peer connected handling
             PeerConnection Peer = (PeerConnection)sender;
-            Logger.Log(Level.DEBUG, "Peer connection formed with {0}", Peer.Address);
+            //Logger.Log(Level.DEBUG, "Peer connection formed with {0}", Peer.Address);
         }
 
         static void PeerDisconnected(object sender, EventArgs e)
         {
             // Custom peer disconnected handling
             PeerConnection Peer = (PeerConnection)sender;
-            Logger.Log(Level.DEBUG, "Peer connection lost with {0}", Peer.Address);
+            //Logger.Log(Level.DEBUG, "Peer connection lost with {0}", Peer.Address);
         }
 
         static void ServerStarted(object sender, EventArgs e)

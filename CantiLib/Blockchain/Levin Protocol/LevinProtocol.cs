@@ -1,4 +1,9 @@
-﻿using Canti.Blockchain.P2P;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Blockchain.P2P;
 using Canti.Data;
 using Canti.Utilities;
 using System;
@@ -106,22 +111,26 @@ namespace Canti.Blockchain
                     Data = Encoding.SplitByteArray(Peers[Packet.Peer].Data, 33, (int)Peers[Packet.Peer].Header.PayloadSize)
                 };
 
-                // Debug
-                Logger?.Log(Level.DEBUG, "Received command:");
-                Logger?.Log(Level.DEBUG, " - Command Code: {0}", Command.CommandCode);
-                //Logger?.Log(Level.DEBUG, " - Is Notification: {0}", Command.IsNotification);
-                //Logger?.Log(Level.DEBUG, " - Is Response: {0}", Command.IsResponse);
-                Logger?.Log(Level.DEBUG, " - Data: ", Command.Data.Length);
-                Logger?.Log(Level.DEBUG, Encoding.ByteArrayToHexString(Command.Data));
-
                 // Check if peer requires a handshake
-                if (Command.CommandCode == Commands.Handshake.Id) Commands.Handshake.Invoke(this, Peer, Command);
-                else if (Peer.State != PeerState.Verified)
+                if (Command.CommandCode == Commands.Handshake.Id) Commands.Handshake.Invoke(this, Peer, Command); // 1001
+                else if (Peer.State == PeerState.Verified)
                 {
                     // Invoke other commands
-                    if (Command.CommandCode == Commands.TimedSync.Id) Commands.TimedSync.Invoke(this, Peer, Command);
-                    else if (Command.CommandCode == Commands.Ping.Id) Commands.Ping.Invoke(this, Peer, Command);
-                    else if (Command.CommandCode == Commands.RequestTxPool.Id) Commands.RequestTxPool.Invoke(this, Peer, Command);
+                    if (Command.CommandCode == Commands.Ping.Id) Commands.Ping.Invoke(this, Peer, Command); // 1002
+                    else if (Command.CommandCode == Commands.TimedSync.Id) Commands.TimedSync.Invoke(this, Peer, Command); // 1003
+                    else if (Command.CommandCode == Commands.NotifyRequestChain.Id) Commands.NotifyRequestChain.Invoke(this, Peer, Command); // 2006
+                    else if (Command.CommandCode == Commands.RequestTxPool.Id) Commands.RequestTxPool.Invoke(this, Peer, Command); // 2008
+                }
+
+                // Debug
+                else if (Peer.State == PeerState.Unverified)
+                {
+                    Logger?.Log(Level.DEBUG, "[IN] Received command:");
+                    Logger?.Log(Level.DEBUG, " - Command Code: {0}", Command.CommandCode);
+                    Logger?.Log(Level.DEBUG, " - Is Notification: {0}", Command.IsNotification);
+                    Logger?.Log(Level.DEBUG, " - Is Response: {0}", Command.IsResponse);
+                    Logger?.Log(Level.DEBUG, " - Data: {0} Bytes", Command.Data.Length);
+                    Logger?.Log(Level.DEBUG, Encoding.ByteArrayToHexString(Command.Data));
                 }
 
                 // Set new read status and clear previous request
@@ -157,12 +166,12 @@ namespace Canti.Blockchain
             // Form message header
             BucketHead2 Header = new BucketHead2
             {
-                Signature = GlobalsConfig.LEVIN_SIGNATURE,
-                ResponseRequired = false,
-                PayloadSize = (ulong)Data.Length,
-                CommandCode = (uint)CommandCode,
-                ProtocolVersion = LEVIN_PROTOCOL_VER_1,
-                Flags = LEVIN_PACKET_REQUEST
+                Signature =         GlobalsConfig.LEVIN_SIGNATURE,
+                ResponseRequired =  false,
+                PayloadSize =       (ulong)Data.Length,
+                CommandCode =       (uint)CommandCode,
+                ProtocolVersion =   LEVIN_PROTOCOL_VER_1,
+                Flags =             LEVIN_PACKET_REQUEST
             };
 
             // Send header packet

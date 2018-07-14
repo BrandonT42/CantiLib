@@ -1,8 +1,14 @@
-﻿using Canti.Data;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Data;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using Canti.Utilities;
 
 // TODO: Utilize a logger to log errors instead of throwing exceptions....
 // Or should I throw exceptions, then listen for them wherever it is I use this class?
@@ -12,8 +18,18 @@ namespace Canti.Blockchain
     [Serializable]
     internal partial class PortableStorage
     {
+        // Logger
+        private Logger Logger;
+
         // Dictionary of entries
-        internal Dictionary<string, object> Entries = new Dictionary<string, object>();
+        private Dictionary<string, object> Entries = new Dictionary<string, object>();
+
+        // Entry point
+        internal PortableStorage(Logger Logger = null)
+        {
+            // Set logger
+            if (Logger != null) this.Logger = Logger;
+        }
 
         // Add an entry
         internal bool AddEntry(string Name, object Value)
@@ -192,7 +208,7 @@ namespace Canti.Blockchain
         }
 
         // Gets an object's serialization type
-        internal static SerializationType GetType(object Value)
+        private SerializationType GetType(object Value)
         {
             // Get serialization type
             SerializationType Type;
@@ -212,13 +228,13 @@ namespace Canti.Blockchain
             else Type = SerializationType.OBJECT;
             return Type;
         }
-        internal static SerializationType GetType(byte[] Value)
+        private SerializationType GetType(byte[] Value)
         {
             // Get serialization type
             byte Type = Encoding.ByteArrayToInteger<byte>(Value, 0);
             return (SerializationType)Type;
         }
-        internal static Type ConvertSerializationType(SerializationType Type)
+        private Type ConvertSerializationType(SerializationType Type)
         {
             if (Type == SerializationType.ULONG) return typeof(ulong);
             else if (Type == SerializationType.LONG) return typeof(long);
@@ -237,7 +253,7 @@ namespace Canti.Blockchain
         }
 
         // Serializes an object to a byte array
-        internal static byte[] SerializeObject(object Value, bool IncludeType = true)
+        private byte[] SerializeObject(object Value, bool IncludeType = true)
         {
             // Create an output array
             byte[] Output = new byte[0];
@@ -334,7 +350,7 @@ namespace Canti.Blockchain
         }
 
         // Serializes a variable int to a byte array
-        private static byte[] SerializeVarInt<T>(T Value) where T : IConvertible
+        private byte[] SerializeVarInt<T>(T Value) where T : IConvertible
         {
             // Create an output buffer
             byte[] Output = new byte[0];
@@ -395,7 +411,7 @@ namespace Canti.Blockchain
         }
 
         // Deserializes a variable int from a byte array, and returns a new offset value
-        internal static T DeserializeVarInt<T>(byte[] Data, int Offset, out int NewOffset) where T : IConvertible
+        private T DeserializeVarInt<T>(byte[] Data, int Offset, out int NewOffset) where T : IConvertible
         {
             // Get byte size
             int SizeMask = Data[Offset] & PORTABLE_RAW_SIZE_MARK_MASK;
@@ -424,7 +440,7 @@ namespace Canti.Blockchain
         }
 
         // Serializes an array to a byte array
-        internal static byte[] SerializeArray(Array Value)
+        private byte[] SerializeArray(Array Value)
         {
             // Create an output array
             byte[] Output = new byte[0];
@@ -447,7 +463,7 @@ namespace Canti.Blockchain
         }
 
         // Serializes an entry to a byte array
-        internal static byte[] SerializeEntry(string Name, object Value)
+        private byte[] SerializeEntry(string Name, object Value)
         {
             // Serialize name
             byte[] NameLength = new byte[] { (byte)Name.Length };
@@ -462,7 +478,7 @@ namespace Canti.Blockchain
         }
 
         // Serializes an object to a byte array
-        internal static byte[] SerializeObjectAsBinary(object Value)
+        private byte[] SerializeObjectAsBinary(object Value)
         {
             // Create an output array
             byte[] Output = new byte[0];
@@ -514,7 +530,7 @@ namespace Canti.Blockchain
         }
 
         // Serializes an array to a byte array
-        internal static byte[] SerializeArrayAsBinary(Array Value)
+        private byte[] SerializeArrayAsBinary(Array Value)
         {
             // Verify array is valid
             if (Value == null) return new byte[0];
@@ -538,7 +554,7 @@ namespace Canti.Blockchain
         }
 
         // Decodes an object packed into a byte array
-        public static T DeserializeObjectFromBinary<T>(byte[] Data)
+        private T DeserializeObjectFromBinary<T>(byte[] Data)
         {
             // Create an output object
             T Output = default(T);
@@ -610,7 +626,7 @@ namespace Canti.Blockchain
         }
 
         // Deserializes an array packed into a byte array
-        public static T[] DeserializeArrayFromBinary<T>(byte[] Data)
+        internal T[] DeserializeArrayFromBinary<T>(byte[] Data)
         {
             // Create a list of objects
             List<T> Output = new List<T>();
@@ -643,7 +659,7 @@ namespace Canti.Blockchain
             // Return output
             return Output.ToArray();
         }
-        public T[] DeserializeArrayFromBinary<T>(string Name)
+        internal T[] DeserializeArrayFromBinary<T>(string Name)
         {
             // Get string
             string Value = (string)Entries[Name];
@@ -658,14 +674,14 @@ namespace Canti.Blockchain
         }
 
         // Gets an entry from the entry dictionary
-        public object GetEntry(string Name)
+        internal object GetEntry(string Name)
         {
             if (Entries.ContainsKey(Name)) return Entries[Name];
             else return null;
         }
 
         // Gets all entries from the entry dictionary as an object array
-        public object[] GetEntries()
+        internal object[] GetEntries()
         {
             List<object> Output = new List<object>();
             foreach (KeyValuePair<string, object> Entry in Entries)

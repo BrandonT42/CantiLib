@@ -1,4 +1,9 @@
-﻿using Canti.Blockchain.Crypto;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Blockchain.Crypto;
 using Canti.Utilities;
 using System;
 using System.Collections.Generic;
@@ -92,7 +97,6 @@ namespace Canti.Blockchain.P2P
                 {
                     // Accept client connection
                     TcpClient Client = Listener.AcceptTcpClient();
-                    Console.WriteLine("[Server] Received a peer connection from {0}", Client.Client.RemoteEndPoint);
 
                     // Add to peer list
                     PeerConnection Peer = new PeerConnection(this, Client);

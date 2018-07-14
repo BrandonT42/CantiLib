@@ -1,9 +1,14 @@
-﻿using System;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using System;
 using System.Collections.Generic;
 using Canti.Blockchain.RPC;
 using Canti.Utilities;
 
-namespace Canti.Blockchain
+namespace Canti.RPC
 {
     public class TransactionBuilder
     {

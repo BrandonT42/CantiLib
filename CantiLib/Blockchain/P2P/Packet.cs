@@ -1,4 +1,9 @@
-﻿namespace Canti.Blockchain.P2P
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+namespace Canti.Blockchain.P2P
 {
     internal struct Packet
     {

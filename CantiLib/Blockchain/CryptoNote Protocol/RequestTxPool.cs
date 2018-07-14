@@ -1,4 +1,10 @@
-﻿using Canti.Utilities;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Blockchain.Crypto;
+using Canti.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -39,7 +45,7 @@ namespace Canti.Blockchain.Commands
                 // Populate and return new response
                 return new Request
                 {
-                    Txs = Storage.Entries.ContainsKey("txs")? Storage.DeserializeArrayFromBinary<string>("txs") : new string[] { }
+                    Txs = Hashing.DeserializeHashArray((string)Storage.GetEntry("txs"))
                 };
             }
         }
@@ -54,7 +60,8 @@ namespace Canti.Blockchain.Commands
                 Request Request = Request.Deserialize(Command.Data);
 
                 // debug
-                Context.Logger?.Log(Level.DEBUG, "[IN] Received TX Pool Request:");
+                Context.Logger?.Log(Level.DEBUG, "[IN] Received \"Request TX Pool\" Request:");
+                Context.Logger?.Log(Level.DEBUG, "- Response Requested: {0}", !Command.IsNotification);
                 Context.Logger?.Log(Level.DEBUG, "- TXs:");
                 for (int i = 0; i < Request.Txs.Length; i++)
                     Context.Logger?.Log(Level.DEBUG, "  - [{0}]: {1}", i, Request.Txs[i]);

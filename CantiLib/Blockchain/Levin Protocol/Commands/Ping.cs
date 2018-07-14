@@ -1,4 +1,9 @@
-﻿namespace Canti.Blockchain.Commands
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+namespace Canti.Blockchain.Commands
 {
     internal class Ping
     {

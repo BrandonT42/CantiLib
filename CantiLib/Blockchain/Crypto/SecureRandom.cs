@@ -1,4 +1,9 @@
-﻿using Canti.Data;
+﻿//
+// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti.Data;
 using System;
 using System.Security.Cryptography;
 
@@ -27,6 +32,19 @@ namespace Canti.Blockchain.Crypto
 
             // Convert 64 bit integer into the given integer type
             return (T)Convert.ChangeType(Output, typeof(T));
+        }
+
+        // Generate a random byte array of a given length
+        internal static byte[] Bytes(int Length = 0)
+        {
+            // Create an output array
+            byte[] Output = new byte[Length];
+
+            // Populate output array with random bytes
+            Provider.GetBytes(Output, 0, Length);
+
+            // Return output
+            return Output;
         }
 
         // Generate a random string of letters and numbers
