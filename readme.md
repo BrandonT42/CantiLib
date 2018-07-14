@@ -1,3 +1,3 @@
-Examples coming soon(tm)
-
-... After I finish this thing.
+The wind howled by me
+As I sat and watched the world;
+All but powerless
