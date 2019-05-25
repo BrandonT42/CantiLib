@@ -1,82 +1,106 @@
 ﻿//
-// Copyright (c) 2018 Canti, The TurtleCoin Developers
+// Copyright (c) 2018-2019 Canti, The TurtleCoin Developers
 // 
 // Please see the included LICENSE file for more information.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 
-namespace Canti.Utilities
+namespace Canti
 {
-    public enum Level : int
+    // TODO - queue output instead of writing it at once?
+    // TODO - log level, check in each method
+    public sealed class Logger
     {
-        FATAL, ERROR, WARNING, INFO, DEBUG
-    }
+        #region Properties and Fields
 
-    public struct Entry
-    {
-        public DateTime Timestamp { get; internal set; }
-        public Level Level { get; internal set; }
-        public string Content { get; internal set; }
-        public Entry(DateTime Timestamp, Level Level, string Content)
+        // An optional file that all logger output is written to
+        public static string LogFile { get; set; }
+
+        // If this is set to true, no time or label prefix is shown
+        public static bool ShowPrefix { get; set; }
+
+        #endregion
+
+        #region Methods
+
+        #region Public
+
+        // Writes with the info label and default color
+        public static void WriteLine(object Input, params object[] Params)
         {
-            this.Timestamp = Timestamp;
-            this.Level = Level;
-            this.Content = Content;
-        }
-    }
-
-    public class Logger
-    {
-        public string LogFile { get; private set; }
-        public Level LogLevel { get; set; }
-        private Queue<Entry> Entries { get; set; }
-        private bool Running { get; set; }
-
-        public Logger(string LogFile = null)
-        {
-            this.LogFile = LogFile;
-            LogLevel = 0;
-            Entries = new Queue<Entry>();
-            Running = true;
+            Console.ForegroundColor = Globals.InfoColor;
+            Write("INFO", Input, Params);
         }
 
-        public void Start()
+        // Writes with the info label and an alternate color
+        public static void Important(object Input, params object[] Params)
         {
-            Thread Thread = new Thread(delegate ()
+            Console.ForegroundColor = Globals.ImportantColor;
+            Write("INFO", Input, Params);
+        }
+
+        // Writes with the debug label and debug color
+        public static void Debug(object Input, params object[] Params)
+        {
+            Console.ForegroundColor = Globals.DebugColor;
+            Write("DEBUG", Input, Params);
+        }
+
+        // Writes with the warning label and warning color
+        public static void Warning(object Input, params object[] Params)
+        {
+            Console.ForegroundColor = Globals.WarningColor;
+            Write("WARNING", Input, Params);
+        }
+
+        // Writes with the error label and error color
+        public static void Error(object Input, params object[] Params)
+        {
+            Console.ForegroundColor = Globals.ErrorColor;
+            Write("ERROR", Input, Params);
+        }
+
+        #endregion
+
+        #region Private
+
+        private static void Write(string Label, object Input, params object[] Params)
+        {
+            // Create an output string
+            string Output;
+
+            // Add time and label prefix
+            if (ShowPrefix)
             {
-                while (true)
-                {
-                    if (Entries.Count == 0)
-                    {
-                        if (!Running) break;
-                    }
-                    else
-                    {
-                        Entry Entry = Entries.Dequeue();
-                        if (LogLevel >= Entry.Level)
-                        {
-                            string Output = string.Format("{0} [{1}] {2}", Entry.Timestamp.ToShortTimeString(), Entry.Level, Entry.Content);
-                            Console.WriteLine(Output);
-                            if (LogFile != null) File.AppendAllText(LogFile, Output + Environment.NewLine);
-                        }
-                    }
-                    Thread.Sleep(10);
-                }
-            });
-            Thread.Start();
+                Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ff")} [{Label}] ".PadRight(33);
+                Output += $"{Input}";
+            }
+            else
+            {
+                Output = $"{Input}";
+            }
+
+            // Write to console
+            if (Params.Length > 0)
+            {
+                Console.WriteLine(Output, Params);
+            }
+            else
+            {
+                Console.WriteLine(Output);
+            }
+
+            // Append to log file
+            if (!string.IsNullOrEmpty(LogFile))
+            {
+                // TODO - Queue this and write it from queue to prevent rare race conditions
+                File.AppendAllText(LogFile, Output + "\n");
+            }
         }
 
-        public void Stop()
-        {
-            Running = false;
-        }
+        #endregion
 
-        public void Log(Level Level, string Content, params object[] Params)
-        {
-            Entries.Enqueue(new Entry(DateTime.Now.ToUniversalTime(), Level, string.Format(Content, Params)));
-        }
+        #endregion
     }
 }
