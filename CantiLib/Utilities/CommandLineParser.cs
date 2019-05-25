@@ -101,8 +101,21 @@ namespace Canti
                         // Attempt to process this option's value
                         try
                         {
-                            // Change to expected type
-                            dynamic ConvertedValue = Convert.ChangeType(Arg, Args[Option].Type);
+                            // Declare a converted value object
+                            dynamic ConvertedValue;
+
+                            // Check if the expected type has a parse method
+                            var Parse = Args[Option].Type.GetMethod("Parse", new[] { typeof(string) });
+                            if (Parse != null)
+                            {
+                                ConvertedValue = Parse.Invoke(null, new object[] { Arg });
+                            }
+
+                            // Attempt to change type from string directly
+                            else
+                            {
+                                ConvertedValue = Convert.ChangeType(Arg, Args[Option].Type);
+                            }
 
                             // Invoke this option's handler
                             Args[Option].Handler.Invoke(ConvertedValue);

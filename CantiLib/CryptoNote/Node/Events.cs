@@ -79,7 +79,7 @@ namespace Canti.CryptoNote
         internal void OnPacketReceived(Peer Peer, Packet Packet)
         {
             // Log debug message
-            Logger.Debug($"[{Peer.Address} IN] {Packet.Type} {Packet.Flag} (VALIDATED: {Peer.Validated}, " +
+            Logger?.Debug($"[{Peer.Address} IN] {Packet.Type} {Packet.Flag} (VALIDATED: {Peer.Validated}, " +
                 $"RESPONSE REQUIRED: {Packet.Header.ResponseRequired})");
             //PrintPacketBody(Packet.Body);
         }
@@ -88,7 +88,7 @@ namespace Canti.CryptoNote
         internal void OnPacketSent(Peer Peer, Packet Packet)
         {
             // Log debug message
-            Logger.Debug($"[{Peer.Address} OUT] {Packet.Type} {Packet.Flag} (VALIDATED: {Peer.Validated}, " +
+            Logger?.Debug($"[{Peer.Address} OUT] {Packet.Type} {Packet.Flag} (VALIDATED: {Peer.Validated}, " +
                 $"RESPONSE REQUIRED: {Packet.Header.ResponseRequired})");
         }
 
@@ -96,14 +96,14 @@ namespace Canti.CryptoNote
         internal void OnPeerConnected(Peer Peer)
         {
             // Log connection message
-            Logger.Debug($"[{Peer.Address} IN] CONNECTION FORMED");
+            Logger?.Debug($"[{Peer.Address} IN] CONNECTION FORMED");
         }
 
         // This is called when a peer is removed from our peer list
         internal void OnPeerDisconnected(Peer Peer)
         {
             // Log disconnection message
-            Logger.Debug($"[{Peer.Address} OUT] PEER DISCONNECTED");
+            Logger?.Debug($"[{Peer.Address} OUT] PEER DISCONNECTED");
         }
 
         #endregion
@@ -111,7 +111,7 @@ namespace Canti.CryptoNote
         #endregion
 
         // TODO - DEBUG CODE
-        static void PrintPacketBody(dynamic Body, int Depth = 1)
+        private void PrintPacketBody(dynamic Body, int Depth = 1)
         {
             int Index = 0;
             foreach (KeyValuePair<string, dynamic> Entry in Body)
@@ -121,26 +121,26 @@ namespace Canti.CryptoNote
                 {
                     string Output = $"[{Index}] {Entry.Key}:";
                     Output = Output.PadLeft(Output.Length + (Depth * 2));
-                    Logger.Debug(Output);
+                    Logger?.Debug(Output);
                     PrintPacketBody(Entry.Value, Depth + 1);
                 }
                 else if (Entry.Key == "block_ids")
                 {
                     string Output = $"[{Index}] {Entry.Key}:";
                     Output = Output.PadLeft(Output.Length + (Depth * 2));
-                    Logger.Debug(Output);
+                    Logger?.Debug(Output);
                     for (var i = 0; i < Entry.Value.Length; i += 64)
                     {
                         string tmp = $"[{i / 64}] {Entry.Value.Substring(i, 64)}";
                         tmp = tmp.PadLeft(tmp.Length + ((Depth + 1) * 2));
-                        Logger.Debug(tmp);
+                        Logger?.Debug(tmp);
                     }
                 }
                 else
                 {
                     string Output = $"[{Index}] {Entry.Key}: {Entry.Value}";
                     Output = Output.PadLeft(Output.Length + (Depth * 2));
-                    Logger.Debug(Output);
+                    Logger?.Debug(Output);
                 }
                 Index++;
             }

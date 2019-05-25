@@ -411,9 +411,6 @@ namespace Canti
             else
             {
                 // TODO - DEBUG CODE
-                Logger.Debug("---------------");
-                Logger.Debug(ByteArrayToHexString(Data));
-                Logger.Debug("---------------");
                 Entries.Add(Name, ByteArrayToHexString(Data));
                 return new byte[0];
             }

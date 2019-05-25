@@ -93,7 +93,7 @@ namespace Canti
         #region Public
 
         // Starts our threads and begins listening for connections
-        public void Start(int Port)
+        public void Start(int Port, int PollingInterval)
         {
             // Store port
             this.Port = Port;
@@ -113,7 +113,7 @@ namespace Canti
             }
 
             // Begin polling connections
-            PollingTimer = new Timer(new TimerCallback(Poll), null, 0, Globals.P2P_POLLING_INTERVAL);
+            PollingTimer = new Timer(new TimerCallback(Poll), null, 0, PollingInterval);
 
             // Invoke on start event handler, signalling that our threads have begun
             OnStart?.Invoke(this, EventArgs.Empty);

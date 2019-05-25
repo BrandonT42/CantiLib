@@ -10,7 +10,7 @@ namespace Canti.CryptoNote
     internal sealed class ApiMethods : IMethodContext
     {
         #region Properties and Fields
-
+        
         private Node Node { get; set; }
 
         #endregion
@@ -19,7 +19,7 @@ namespace Canti.CryptoNote
 
         public bool CheckVersion(int Version)
         {
-            return (Version >= Globals.API_MINIMUM_VERSION && Version <= Globals.API_CURRENT_VERSION);
+            return (Version >= Node.Globals.API_MINIMUM_VERSION && Version <= Node.Globals.API_CURRENT_VERSION);
         }
 
         #endregion

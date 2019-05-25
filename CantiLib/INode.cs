@@ -13,6 +13,9 @@ namespace Canti
     {
         #region Methods
 
+        // Reference to console logger
+        Logger Logger { get; set; }
+
         // Starts this node
         bool Start();
 

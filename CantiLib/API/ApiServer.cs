@@ -30,6 +30,7 @@ namespace Canti
     {
         #region Properties and Fields
 
+        public Logger Logger { get; set; }
         public int Port { get; private set; }
 
         private IMethodContext MethodContext { get; set; }
@@ -188,7 +189,7 @@ namespace Canti
                 {
                     // Get our request's params directly from URL string
                     string[] Params = Request.Url.Segments.Skip(3).Select(x => x.Replace("/", "")).ToArray();
-                    Logger.Debug($"[{Request.RemoteEndPoint.Address.ToString()} API] " +
+                    Logger?.Debug($"[{Request.RemoteEndPoint.Address.ToString()} API] " +
                         $"/{Version}/{MethodName}/{string.Join("/", Request.Url.Segments.Skip(3))}");
 
                     // Populate our parameters
@@ -212,7 +213,7 @@ namespace Canti
                     using (var Reader = new StreamReader(Request.InputStream, Request.ContentEncoding))
                         RequestBody = Reader.ReadToEnd();
                     JObject Params = JsonConvert.DeserializeObject<JObject>(RequestBody);
-                    Logger.Debug($"[{Request.RemoteEndPoint.Address.ToString()} API] /{Version}/{MethodName}/");
+                    Logger?.Debug($"[{Request.RemoteEndPoint.Address.ToString()} API] /{Version}/{MethodName}/");
 
                     // Invoke the requested method
                     Result = (string)Method.Invoke(this, new object[] { Params });

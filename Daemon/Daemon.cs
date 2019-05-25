@@ -7,14 +7,14 @@ using System;
 
 namespace Canti
 {
-    class Daemon
+    partial class Daemon
     {
         // Our node instance, interfaced for future extensibility
         static INode Node { get; set; }
 
         // The ports our node will bind to, set to default values
-        static int P2pPort = Globals.P2P_DEFAULT_PORT;
-        static int ApiPort = Globals.API_DEFAULT_PORT;
+        static int P2pPort = Configuration.P2P_DEFAULT_PORT;
+        static int ApiPort = Configuration.API_DEFAULT_PORT;
 
         static void Main(string[] Args)
         {
@@ -33,6 +33,28 @@ namespace Canti
                     "Which port to bind API server to",
                     typeof(int),
                     (Port) => ApiPort = Port
+                },
+                {
+                    "log-level",
+                    "Which log level to output at",
+                    typeof(int),
+                    (Level) =>
+                    {
+                        // Level falls below the minimum value, default to minimum
+                        if (Level < (int)LogLevel.NONE)
+                        {
+                            Configuration.LOG_LEVEL = LogLevel.NONE;
+                        }
+
+                        // Level falls above the maximum value, default to maximum
+                        else if (Level > (int)LogLevel.MAX)
+                        {
+                            Configuration.LOG_LEVEL = LogLevel.MAX;
+                        }
+
+                        // Level falls within range, set to specified level
+                        else Configuration.LOG_LEVEL = (LogLevel)Level;
+                    }
                 }
             };
 
@@ -40,24 +62,15 @@ namespace Canti
             if (!CommandLineParser.Parse(Arguments, Args))
             {
                 // Wait for exit
-                Logger.WriteLine("Press any key to exit");
+                Console.WriteLine("Press any key to exit");
                 Console.ReadKey();
                 return;
             }
 
-            // Set a log file, where all console output is saved to
-            Logger.LogFile = "cs-turtlecoin.log";
-
-            // Show ascii art, strictly vanity
-            Logger.Important(Globals.ASCII_ART);
-
-            // Setting this to true displays a timestamp and label prefix on all log messages
-            Logger.ShowPrefix = true;
-
             // Create a node instance
-            Node = new CryptoNote.Node
+            Node = new CryptoNote.Node(Configuration)
             {
-                // Assign port values (will default to global defaults if not set)
+                // Assign port values
                 P2pPort = P2pPort,
                 ApiPort = ApiPort
             };
@@ -66,7 +79,7 @@ namespace Canti
             if (!Node.Start())
             {
                 // Wait for exit
-                Logger.WriteLine("Press any key to exit");
+                Console.WriteLine("Press any key to exit");
                 Console.ReadKey();
                 return;
             }
@@ -75,7 +88,7 @@ namespace Canti
             // Node.AddPeer("127.0.0.1", 8099);
 
             // Wait for exit
-            Logger.Important("Press enter at any time to stop node");
+            Node.Logger?.Important("Press enter at any time to stop node");
             Console.ReadLine();
 
             // Stops the node instance and all associated threads
