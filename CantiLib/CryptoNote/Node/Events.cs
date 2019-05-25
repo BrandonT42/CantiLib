@@ -18,8 +18,8 @@ namespace Canti.CryptoNote
         {
             P2pServer.OnStart += OnStart;
             P2pServer.OnStop += OnStop;
-            P2pServer.OnPeerConnected += OnPeerConnected;
-            P2pServer.OnPeerDisconnected += OnPeerDisconnected;
+            P2pServer.OnPeerConnected += OnP2pPeerConnected;
+            P2pServer.OnPeerDisconnected += OnP2pPeerDisconnected;
             P2pServer.OnDataReceived += OnDataReceived;
             P2pServer.OnDataSent += OnDataSent;
         }
@@ -33,7 +33,7 @@ namespace Canti.CryptoNote
         public void OnStop(object sender, EventArgs e) { }
 
         // This is invoked when a new P2P peer connection is formed
-        public void OnPeerConnected(object sender, EventArgs e)
+        public void OnP2pPeerConnected(object sender, EventArgs e)
         {
             // Get peer data
             var P2pPeer = (P2pPeer)sender;
@@ -53,14 +53,13 @@ namespace Canti.CryptoNote
         }
 
         // This is invoked when a connected P2P peer is disconnected
-        public void OnPeerDisconnected(object sender, EventArgs e)
+        public void OnP2pPeerDisconnected(object sender, EventArgs e)
         {
             // Get peer data
             var Peer = (P2pPeer)sender;
 
             // Remove peer from peer list
             RemovePeer(Peer);
-            Logger.Debug($"[{Peer.Address} OUT] PEER DISCONNECTED");
         }
 
         // This is invoked when our underlying P2P server receives data from a peer
@@ -94,10 +93,17 @@ namespace Canti.CryptoNote
         }
 
         // This is called when a handshake is accepted
-        internal void OnHandshake(Peer Peer)
+        internal void OnPeerConnected(Peer Peer)
         {
             // Log connection message
             Logger.Debug($"[{Peer.Address} IN] CONNECTION FORMED");
+        }
+
+        // This is called when a peer is removed from our peer list
+        internal void OnPeerDisconnected(Peer Peer)
+        {
+            // Log disconnection message
+            Logger.Debug($"[{Peer.Address} OUT] PEER DISCONNECTED");
         }
 
         #endregion

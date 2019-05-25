@@ -38,7 +38,7 @@ namespace Canti.CryptoNote
             Peer.Validated = true;
 
             // Let the node know a handshake has been accepted
-            OnHandshake(Peer);
+            OnPeerConnected(Peer);
 
             // Construct a response packet
             var Response = new Packet(PacketType.HANDSHAKE, PacketFlag.RESPONSE, false);
@@ -73,7 +73,7 @@ namespace Canti.CryptoNote
             Peer.Validated = true;
 
             // Let the node know a handshake has been accepted
-            OnHandshake(Peer);
+            OnPeerConnected(Peer);
         }
 
         // A handshake packet was received

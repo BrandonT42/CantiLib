@@ -41,6 +41,7 @@ namespace Canti.CryptoNote
         {
             lock (PeerList)
             {
+                OnPeerDisconnected(PeerList.First(x => x.P2pPeer == P2pPeer));
                 PeerList.RemoveAll(x => x.P2pPeer == P2pPeer);
             }
         }

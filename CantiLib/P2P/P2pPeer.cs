@@ -27,21 +27,7 @@ namespace Canti
         }
 
         // Returns the remote address and port of the peer
-        private EndPoint _address;
-        internal EndPoint Address
-        {
-            get
-            {
-                // Only read and store address from the connection the first time
-                if (_address == null && Connected)
-                {
-                    _address = Client.Client.RemoteEndPoint;
-                }
-
-                // Return stored address (so we can still access it after disconnection)
-                return _address;
-            }
-        }
+        internal EndPoint Address { get; private set; }
 
         // The raw TCP client connection
         internal TcpClient Client { get; set; }
@@ -177,6 +163,7 @@ namespace Canti
             this.Server = Server;
             this.Client = Client;
             this.IsIncoming = IsIncoming;
+            Address = Client.Client.RemoteEndPoint;
             StopRunning = false;
             OutgoingMessageQueue = new Queue<byte[]>();
         }

@@ -29,8 +29,8 @@ namespace Canti
 
         void OnStart(object sender, EventArgs e);
         void OnStop(object sender, EventArgs e);
-        void OnPeerConnected(object sender, EventArgs e);
-        void OnPeerDisconnected(object sender, EventArgs e);
+        void OnP2pPeerConnected(object sender, EventArgs e);
+        void OnP2pPeerDisconnected(object sender, EventArgs e);
         void OnDataReceived(object sender, EventArgs e);
         void OnDataSent(object sender, EventArgs e);
 
