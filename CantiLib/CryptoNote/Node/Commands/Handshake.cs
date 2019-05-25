@@ -33,6 +33,7 @@ namespace Canti.CryptoNote
             // TODO - validate payload/core sync data
 
             // Set peer to validated
+            Peer.Port = Packet.Body["node_data"]["my_port"];
             Peer.Id = Packet.Body["node_data"]["peer_id"];
             Peer.Validated = true;
 
@@ -64,6 +65,8 @@ namespace Canti.CryptoNote
             // TODO - validate peer
 
             // Set peer to validated
+            Peer.Port = Packet.Body["node_data"]["my_port"];
+            Peer.Id = Packet.Body["node_data"]["peer_id"];
             Peer.Validated = true;
         }
 

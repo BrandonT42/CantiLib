@@ -25,7 +25,8 @@ namespace Canti.CryptoNote
         {
             get
             {
-                return (P2pPeer.Client != null) ? P2pPeer.Address.ToString() : "";
+                return (P2pPeer.Client != null) ? 
+                    ((IPEndPoint)P2pPeer.Client.Client.RemoteEndPoint).Address.ToString() + ":" + Port : "";
             }
         }
 
@@ -48,13 +49,7 @@ namespace Canti.CryptoNote
         }
 
         // Returns the underlying P2P peer's connected port
-        internal uint Port
-        {
-            get
-            {
-                return (P2pPeer.Client != null) ? (uint)((IPEndPoint)P2pPeer.Client.Client.RemoteEndPoint).Port : 0;
-            }
-        }
+        internal uint Port { get; set; }
 
         // A unique identifier for this peer
         internal ulong Id { get; set; }

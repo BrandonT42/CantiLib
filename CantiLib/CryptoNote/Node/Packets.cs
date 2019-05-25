@@ -13,9 +13,6 @@ namespace Canti.CryptoNote
         // Handles incoming packets
         internal void HandlePacket(Peer Peer, Packet Packet)
         {
-            // Signal that we received a packet
-            OnPacketReceived(Peer, Packet);
-
             // Wrap this in a try-catch, in case we received an invalid packet
             try
             {
@@ -48,6 +45,9 @@ namespace Canti.CryptoNote
                 Logger.Warning($"Invalid {Packet.Type} packet received from {Peer.Address}, killing connection...");
                 Peer.Dispose();
             }
+            
+            // Signal that we received a packet
+            OnPacketReceived(Peer, Packet);
         }
     }
 }
