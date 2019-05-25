@@ -49,7 +49,6 @@ namespace Canti.CryptoNote
                 {
                     Handshake(Peer);
                 }
-                Logger.Debug($"[{P2pPeer.Address} IN] CONNECTION FORMED");
             }
         }
 
@@ -92,6 +91,13 @@ namespace Canti.CryptoNote
             // Log debug message
             Logger.Debug($"[{Peer.Address} OUT] {Packet.Type} {Packet.Flag} (VALIDATED: {Peer.Validated}, " +
                 $"RESPONSE REQUIRED: {Packet.Header.ResponseRequired})");
+        }
+
+        // This is called when a handshake is accepted
+        internal void OnHandshake(Peer Peer)
+        {
+            // Log connection message
+            Logger.Debug($"[{Peer.Address} IN] CONNECTION FORMED");
         }
 
         #endregion

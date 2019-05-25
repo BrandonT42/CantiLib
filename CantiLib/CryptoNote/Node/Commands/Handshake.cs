@@ -37,6 +37,9 @@ namespace Canti.CryptoNote
             Peer.Id = Packet.Body["node_data"]["peer_id"];
             Peer.Validated = true;
 
+            // Let the node know a handshake has been accepted
+            OnHandshake(Peer);
+
             // Construct a response packet
             var Response = new Packet(PacketType.HANDSHAKE, PacketFlag.RESPONSE, false);
             Response.Body["node_data"] = new Dictionary<string, dynamic>
@@ -68,6 +71,9 @@ namespace Canti.CryptoNote
             Peer.Port = Packet.Body["node_data"]["my_port"];
             Peer.Id = Packet.Body["node_data"]["peer_id"];
             Peer.Validated = true;
+
+            // Let the node know a handshake has been accepted
+            OnHandshake(Peer);
         }
 
         // A handshake packet was received
