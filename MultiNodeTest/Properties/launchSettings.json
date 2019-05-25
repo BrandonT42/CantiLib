@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Debug": {
+      "commandName": "Project",
+      "commandLineArgs": "-trtl-p2p-port 8090 -trtl-api-port 8091 -athx-p2p-port 8092 -athx-api-port 8093 -trtl-log-level 3 -athx-log-level 3"
+    }
+  }
+}

@@ -31,7 +31,6 @@ namespace Canti
     }
 
     // TODO - queue output instead of writing it at once?
-    // TODO - log level, check in each method
     public sealed class Logger
     {
         #region Properties and Fields
@@ -45,7 +44,8 @@ namespace Canti
         // If this is set to true, no time or label prefix is shown
         public bool ShowPrefix { get; set; }
 
-        // The log level 
+        // An optional custom prefix
+        public string CustomPrefix { get; set; }
 
         // The colors we will use when writing
         public ConsoleColor InfoColor { get; set; }
@@ -118,15 +118,39 @@ namespace Canti
             {
                 if (LogLevel >= LogLevel.MAX)
                 {
-                    Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ffffff")} [{Label}] ".PadRight(37);
+                    if (!string.IsNullOrEmpty(CustomPrefix))
+                    {
+                        Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ffffff")} [{CustomPrefix} {Label}]";
+                        Output = Output.PadRight(CustomPrefix.Length + 38);
+                    }
+                    else
+                    {
+                        Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ffffff")} [{Label}]".PadRight(37);
+                    }
                 }
                 else if (LogLevel == LogLevel.DEBUG)
                 {
-                    Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ff")} [{Label}] ".PadRight(33);
+                    if (!string.IsNullOrEmpty(CustomPrefix))
+                    {
+                        Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ff")} [{CustomPrefix} {Label}]";
+                        Output = Output.PadRight(CustomPrefix.Length + 34);
+                    }
+                    else
+                    {
+                        Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ff")} [{Label}]".PadRight(33);
+                    }
                 }
                 else
                 {
-                    Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss")} [{Label}] ".PadRight(31);
+                    if (!string.IsNullOrEmpty(CustomPrefix))
+                    {
+                        Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss")} [{CustomPrefix} {Label}]";
+                        Output = Output.PadRight(CustomPrefix.Length + 31);
+                    }
+                    else
+                    {
+                        Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss")} [{Label}]".PadRight(30);
+                    }
                 }
                 Output += $"{Input}";
             }

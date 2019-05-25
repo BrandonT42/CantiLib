@@ -14,7 +14,7 @@ namespace Canti
         // This is the byte array value that uniquely identifies the desired network
         public byte[] NETWORK_ID { get; set; }
 
-        // An optional bit of vanity text that will be shown when a node is launched
+        // (OPTIONAL) A bit of vanity text that will be shown when a node is first initialized
         public string ASCII_ART { get; set; }
 
         #endregion
@@ -59,11 +59,14 @@ namespace Canti
 
         #region LOGGING
 
-        // An optional log file where logger output will be saved to
+        // (OPTIONAL) If specified, all logger output will also be written to this file
         public string LOG_FILE { get; set; }
 
-        // How much logging will be shown (ranges in value from -2 to 3)
+        // (OPTIONAL) How much logging will be shown (ranges in value from -2 to 3)
         public LogLevel LOG_LEVEL { get; set; }
+
+        // (OPTIONAL) A custom prefix that will show next to logger labels
+        public string CUSTOM_PREFIX { get; set; }
 
         // The default color for logger output
         public ConsoleColor INFO_COLOR { get; set; }

@@ -121,6 +121,7 @@ namespace Canti.CryptoNote
             {
                 LogFile = Globals.LOG_FILE,
                 LogLevel = Globals.LOG_LEVEL,
+                CustomPrefix = Globals.CUSTOM_PREFIX,
                 InfoColor = Globals.INFO_COLOR,
                 ImportantColor = Globals.IMPORTANT_COLOR,
                 DebugColor = Globals.DEBUG_COLOR,
