@@ -62,7 +62,7 @@ namespace Canti.CryptoNote
             }
         }
 
-        // Request a timed sync packet from a connected peer
+        // Sends a timed sync request packet
         private void TimedSync(Peer Peer)
         {
             // Check if this peer is validated

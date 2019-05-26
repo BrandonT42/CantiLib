@@ -11,17 +11,21 @@ using System.Threading;
 
 namespace Canti
 {
+    /// <summary>
+    /// A P2P peer belonging to a P2pServer
+    /// </summary>
     public sealed class P2pPeer
     {
         #region Properties and Fields
 
-        #region Public
+        #region Internal
 
-        // Returns whether a peer is still connected or not
+        // Returns whether or not this peer's last request indicated an active connection
         internal bool Connected
         {
             get
             {
+                // TODO - Poll for connection here?
                 return (Client != null) ? Client.Connected : false;
             }
         }
@@ -39,10 +43,19 @@ namespace Canti
 
         #region Private
 
+        // The P2P server this peer is associated with
         private P2pServer Server { get; set; }
+
+        // Signals that this peer should stop its threads
         private bool StopRunning { get; set; }
+
+        // Thread that handles reading incoming data
         private Thread ReadThread { get; set; }
+
+        // Thread that handles sending outgoing data from the queue
         private Thread WriteThread { get; set; }
+
+        // Keeps track of outgoing data arrays
         private Queue<byte[]> OutgoingMessageQueue { get; set; }
 
         #endregion
@@ -53,6 +66,7 @@ namespace Canti
 
         #region Internal
 
+        // Starts this peer's associated threads
         internal void Start()
         {
             // Begin threads
@@ -65,6 +79,7 @@ namespace Canti
             Server.OnPeerConnected?.Invoke(this, EventArgs.Empty);
         }
 
+        // Stops this peer's associated threads
         internal void Stop()
         {
             // Stop threads
@@ -75,11 +90,13 @@ namespace Canti
             {
                 Client.Close();
             }
+
+            // TODO - invoke disconnect here to keep in line with above invoke on connect?
         }
 
         #endregion
 
-        #region Public
+        #region Internal
 
         // Adds an outgoing message to our queue
         internal void SendMessage(byte[] Data)
@@ -94,6 +111,7 @@ namespace Canti
 
         #region Private
 
+        // Reads incoming data from the client's network stream
         private void Read()
         {
             // Get client stream
@@ -121,6 +139,7 @@ namespace Canti
             }
         }
 
+        // Sends outgoing data from the outgoing data queue
         private void Write()
         {
             // Get client stream
@@ -157,6 +176,7 @@ namespace Canti
 
         #region Constructors
 
+        // Initializes a new P2P peer
         internal P2pPeer(P2pServer Server, TcpClient Client, bool IsIncoming = true)
         {
             // Assign local variables

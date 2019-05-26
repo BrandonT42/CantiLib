@@ -3,9 +3,12 @@
 // 
 // Please see the included LICENSE file for more information.
 
+using Canti;
+using Canti.CryptoNote;
 using System;
+using static Canti.Utils;
 
-namespace Canti
+namespace CantiTests
 {
     partial class Program
     {
@@ -17,6 +20,14 @@ namespace Canti
                 0xb5, 0x0c, 0x4a, 0x6c, 0xcf, 0x52, 0x57, 0x41,
                 0x65, 0xf9, 0x91, 0xa4, 0xb6, 0xc1, 0x43, 0xe9
             },
+
+            #endregion
+
+            #region STORAGE
+
+            DATABASE_TYPE = DatabaseType.SQLITE,
+            DATABASE_DIRECTORY = GetAppDataPath("TurtleCoin"),
+            DATABASE_LOCATION = "CS-TurtleCoin.db",
 
             #endregion
 
@@ -61,6 +72,14 @@ namespace Canti
                 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf0
             },
+
+            #endregion
+
+            #region STORAGE
+
+            DATABASE_TYPE = DatabaseType.SQLITE,
+            DATABASE_DIRECTORY = GetAppDataPath("Athena"),
+            DATABASE_LOCATION = "CS-Athena.db",
 
             #endregion
 

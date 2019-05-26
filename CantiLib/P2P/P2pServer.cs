@@ -12,52 +12,94 @@ using System.Threading;
 
 namespace Canti
 {
-    // A simple multi-threaded P2P wrapper
+    /// <summary>
+    /// A standalone P2P server
+    /// </summary>
     public sealed class P2pServer
     {
         #region Properties and Fields
 
         #region Public
 
-        // This is invoked when all of our threads have started
+        /// <summary>
+        /// Invoked when the server is started successfully
+        /// </summary>
+        /// <param name="sender">A reference to this P2pServer instance</param>
+        /// <param name="e">Always empty</param>
         public EventHandler OnStart { get; set; }
 
-        // This is invoked when all of our threads have exited
+        /// <summary>
+        /// Invoked when the server is stopped
+        /// </summary>
+        /// <param name="sender">A reference to this P2pServer instance</param>
+        /// <param name="e">Always empty</param>
         public EventHandler OnStop { get; set; }
 
-        // This is invoked when a peer connection is formed on a new thread
+        /// <summary>
+        /// Invoked when a new peer connection is detected
+        /// </summary>
+        /// <param name="sender">A reference to the associated P2pPeer instance</param>
+        /// <param name="e">Always empty</param>
         public EventHandler OnPeerConnected { get; set; }
 
-        // This is invoked when a peer connection is disconnected
+        /// <summary>
+        /// Invoked when a peer's polling attempt comes back unsuccessful, indicating a disconnection
+        /// </summary>
+        /// <param name="sender">A reference to the associated P2pPeer instance</param>
+        /// <param name="e">Always empty</param>
         public EventHandler OnPeerDisconnected { get; set; }
 
-        // This is invoked whenever a peer sends us any data
+        /// <summary>
+        /// Invoked when a connected peer sends data
+        /// </summary>
+        /// <param name="sender">(P2pPeer Peer, byte[] Data) - A reference to 
+        /// the associated P2pPeer instance, as well as the data received</param>
+        /// <param name="e">Always empty</param>
         public EventHandler OnDataReceived { get; set; }
 
-        // This is invoked whenever a peer is sent data
+        /// <summary>
+        /// Invoked when the server sends data to a connected peer
+        /// </summary>
+        /// <param name="sender">(P2pPeer Peer, byte[] Data) - A reference to 
+        /// the associated P2pPeer instance, as well as the data sent</param>
+        /// <param name="e">Always empty</param>
         public EventHandler OnDataSent { get; set; }
 
-        // The maximum number of connections we will allow at one time for this server
+        /// <summary>
+        /// The maximum number of concurrent peer connections this server will allow
+        /// </summary>
         public int MaxConnections { get; private set; }
 
-        // The port our server was started on
+        /// <summary>
+        /// The port this server is binded to
+        /// </summary>
         public int Port { get; private set; }
 
-        // Lists the total active connections
+        /// <summary>
+        /// How many peers are connected to this server
+        /// </summary>
         public int Connections
         {
             get
             {
-                return Peers.Values.Where(x => x != null && x.Connected).Count();
+                lock (Peers)
+                {
+                    return Peers.Values.Where(x => x != null && x.Connected).Count();
+                }
             }
         }
 
-        // Returns a referenced list to all active peer clients
+        /// <summary>
+        /// Returns a list of all connected peers
+        /// </summary>
         public List<P2pPeer> PeerList
         {
             get
             {
-                return Peers.Values.Where(x => x != null && x.Connected).ToList();
+                lock (Peers)
+                {
+                    return Peers.Values.Where(x => x != null && x.Connected).ToList();
+                }
             }
         }
 
@@ -71,8 +113,10 @@ namespace Canti
         // The thread our listener runs on
         private Thread ListenerThread { get; set; }
 
-        // Thread events
+        // Event that is set when the server is stopped
         private ManualResetEvent StopEvent { get; set; }
+
+        // Event that is set when the server detects a pending connection
         private ManualResetEvent ReadyEvent { get; set; }
 
         // Queue of incoming connections
@@ -92,7 +136,11 @@ namespace Canti
 
         #region Public
 
-        // Starts our threads and begins listening for connections
+        /// <summary>
+        /// Starts listening for new connections
+        /// </summary>
+        /// <param name="Port">The port to listen for incoming connections on</param>
+        /// <param name="PollingInterval">How often (in milliseconds) connections should be polled</param>
         public void Start(int Port, int PollingInterval)
         {
             // Store port
@@ -119,7 +167,9 @@ namespace Canti
             OnStart?.Invoke(this, EventArgs.Empty);
         }
 
-        // Stops the server and all peer worker threads
+        /// <summary>
+        /// Stops the server and ends all associated threads
+        /// </summary>
         public void Stop()
         {
             // Stop polling timer
@@ -143,7 +193,10 @@ namespace Canti
             OnStop?.Invoke(this, EventArgs.Empty);
         }
 
-        // Broadcasts a set of bytes to all connected peer clients
+        /// <summary>
+        /// Broadcasts a byte array to all connected peers
+        /// </summary>
+        /// <param name="Data">The byte array to be sent</param>
         public void Broadcast(byte[] Data)
         {
             // Send our data to each connection
@@ -153,7 +206,11 @@ namespace Canti
             }
         }
 
-        // Adds a peer to the connection queue manually (such as adding a seed node)
+        /// <summary>
+        /// Adds a peer to the connection queue to be accepted when space is available
+        /// </summary>
+        /// <param name="Address">The remote peer's host address</param>
+        /// <param name="Port">The remote peer's listening port</param>
         public void AddPeer(string Address, int Port)
         {
             // Do this in a new thread to prevent locking on the main thread while connecting
@@ -179,7 +236,11 @@ namespace Canti
             }).Start();
         }
 
-        // Forcefully adds a peer, replacing the first in our list if needed
+        /// <summary>
+        /// Adds a peer, ignoring the current connection queue, and booting another peer if needed
+        /// </summary>
+        /// <param name="Address">The remote peer's host address</param>
+        /// <param name="Port">The remote peer's listening port</param>
         public void ForceAddPeer(string Address, int Port)
         {
             // Do this in a new thread to prevent locking on the main thread while connecting
@@ -332,7 +393,10 @@ namespace Canti
 
         #region Constructors
 
-        // Constructor
+        /// <summary>
+        /// Initializes a new P2P server
+        /// </summary>
+        /// <param name="MaxConnections">The maximum number of concurrent peer connections this server will allow</param>
         public P2pServer(int MaxConnections)
         {
             // Setup threads and events

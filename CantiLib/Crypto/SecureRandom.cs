@@ -10,14 +10,30 @@ using static Canti.Utils;
 
 namespace Canti
 {
-    // Cryptographically secure random number generation
+    /// <summary>
+    /// Cryptographically secure random number generation
+    /// </summary>
     public static class SecureRandom
     {
+        #region Properties and Fields
+
+        #region Private
+
         // Cryptography service provider
         private readonly static RNGCryptoServiceProvider Provider = new RNGCryptoServiceProvider();
 
-        // Generate a random number of a given type
-        public static T Integer<T>() where T : IConvertible
+        #endregion
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Generate a random number of a given type
+        /// </summary>
+        /// <typeparam name="T">The type of integer to generate</typeparam>
+        /// <returns>A random integer of the specified type</returns>
+        public static T Integer<T>() where T : IComparable<T>
         {
             // Get size of output type
             int Size = Marshal.SizeOf(default(T));
@@ -35,7 +51,11 @@ namespace Canti
             return (T)Convert.ChangeType(Output, typeof(T));
         }
 
-        // Generate a random byte array of a given length
+        /// <summary>
+        /// Generate a random byte array of a given length
+        /// </summary>
+        /// <param name="Length">How long the generate byte array should be</param>
+        /// <returns>A randomized byte array of the specified length</returns>
         public static byte[] Bytes(int Length = 0)
         {
             // Create an output array
@@ -48,25 +68,6 @@ namespace Canti
             return Output;
         }
 
-        // Generate a random string of letters and numbers
-        public static string String(int Length = 64)
-        {
-            // Create a buffer
-            byte[] Buffer = new byte[0];
-
-            // Loop through and add random bytes until the string is of the desired length
-            for (int i = 0; i < Length / 2; i++)
-                Buffer = Buffer.AppendInteger(Integer<byte>());
-
-            // Convert to a hex string
-            string Output = ByteArrayToHexString(Buffer);
-
-            // Trim to correct size
-            while (Output.Length < Length) Output += Integer<byte>();
-            if (Output.Length > Length) Output = Output.Substring(0, Length);
-
-            // Return output string
-            return Output;
-        }
+        #endregion
     }
 }

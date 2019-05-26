@@ -3,7 +3,9 @@
 // 
 // Please see the included LICENSE file for more information.
 
+using Canti.CryptoNote;
 using System;
+using static Canti.Utils;
 
 namespace Canti
 {
@@ -27,6 +29,14 @@ namespace Canti
             "   ██║   ██║  ██║██╔══██╗   ██║   ██║    ██╔═╝  ██║    ██║  ██║██║██║╚██╗██║\n" +
             "   ██║   ╚█████╔╝██║  ██║   ██║   ██████╗██████╗╚█████╗╚█████╔╝██║██║ ╚████║\n" +
             "   ╚═╝    ╚════╝ ╚═╝  ╚═╝   ╚═╝   ╚═════╝╚═════╝ ╚════╝ ╚════╝ ╚═╝╚═╝  ╚═══╝\n",
+
+            #endregion
+
+            #region STORAGE
+
+            DATABASE_TYPE = DatabaseType.SQLITE,
+            DATABASE_DIRECTORY = GetAppDataPath("TurtleCoin"),
+            DATABASE_LOCATION = "CS-TurtleCoin.db",
 
             #endregion
 

@@ -12,12 +12,36 @@ namespace Canti.CryptoNote
     {
         #region Properties and Fields
 
+        #region Internal
+
         // Contains a list of our connected peers
         internal List<Peer> PeerList { get; set; }
 
         #endregion
 
+        #endregion
+
         #region Methods
+
+        #region Internal
+
+        // Serializes our peer list as a byte array
+        internal byte[] GetPeerList()
+        {
+            byte[] Buffer = new byte[0];
+            foreach (var Peer in PeerList)
+            {
+                Buffer = Buffer.AppendInteger(Peer.IpAddress);
+                Buffer = Buffer.AppendInteger(Peer.Port);
+                Buffer = Buffer.AppendInteger(Peer.Id);
+                Buffer = Buffer.AppendInteger(Peer.LastSeen);
+            }
+            return Buffer;
+        }
+
+        #endregion
+
+        #region Private
 
         // Sets up our peer list
         private void SetupPeerList()
@@ -62,19 +86,7 @@ namespace Canti.CryptoNote
             }
         }
 
-        // Serializes our peer list as a byte array
-        internal byte[] GetPeerList()
-        {
-            byte[] Buffer = new byte[0];
-            foreach (var Peer in PeerList)
-            {
-                Buffer = Buffer.AppendInteger(Peer.IpAddress);
-                Buffer = Buffer.AppendInteger(Peer.Port);
-                Buffer = Buffer.AppendInteger(Peer.Id);
-                Buffer = Buffer.AppendInteger(Peer.LastSeen);
-            }
-            return Buffer;
-        }
+        #endregion
 
         #endregion
     }

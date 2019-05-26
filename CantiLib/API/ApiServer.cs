@@ -15,40 +15,83 @@ using System.Threading;
 
 namespace Canti
 {
-    // This is used to label api methods in our source
+    /// <summary>
+    /// This is used to label api methods in our source
+    /// </summary>
     public sealed class ApiMethod : Attribute
     {
-        public string MethodName;
+        /// <summary>
+        /// The name of this method request
+        /// </summary>
+        public string MethodName { get; set; }
+
+        /// <summary>
+        /// Specifies a function is an API method
+        /// </summary>
+        /// <param name="MethodName">The name of this method request</param>
         public ApiMethod(string MethodName)
         {
             this.MethodName = MethodName.ToUpper();
         }
     }
 
-    // A self-contained rest API server/listener
+    /// <summary>
+    /// A standalone rest API server
+    /// </summary>
     public sealed class ApiServer
     {
         #region Properties and Fields
 
+        #region Public
+
+        /// <summary>
+        /// The logger this server will use to report errors
+        /// </summary>
         public Logger Logger { get; set; }
+
+        /// <summary>
+        /// The port this server is binded to
+        /// </summary>
         public int Port { get; private set; }
 
+        #endregion
+
+        #region Private
+
+        // Our method context, containing all method requests
         private IMethodContext MethodContext { get; set; }
+
+        // The HTTP listener that listens for new requests
         private HttpListener Listener { get; set; }
+
+        // The thread our listener runs on
         private Thread ListenerThread { get; set; }
+
+        // An array of worker threads that handle incoming requests
         private Thread[] WorkerThreads { get; set; }
+
+        // An event that is set when the server is stopped
         private ManualResetEvent StopEvent { get; set; }
+
+        // An event that is set when the server detects a new request
         private ManualResetEvent ReadyEvent { get; set; }
+
+        // A queue of incoming requests waiting to be processed
         private Queue<HttpListenerContext> ContextQueue { get; set; }
+
+        #endregion
 
         #endregion
 
         #region Methods
 
-        #region Internal
+        #region Public
 
-        // Starts our HTTP listener and worker threads
-        internal void Start(int Port)
+        /// <summary>
+        /// Starts listening for API requests
+        /// </summary>
+        /// <param name="Port">The port to listen for incoming requests on</param>
+        public void Start(int Port)
         {
             // Store port
             this.Port = Port;
@@ -79,8 +122,10 @@ namespace Canti
             }
         }
 
-        // Stops the API server and ends all associated threads
-        internal void Stop()
+        /// <summary>
+        /// Stops the server and ends all associated threads
+        /// </summary>
+        public void Stop()
         {
             StopEvent.Set();
             ListenerThread.Join();
@@ -88,8 +133,11 @@ namespace Canti
             Listener.Stop();
         }
 
-        // Assigns our method context in which we will invoke methods
-        internal void AssignMethodContext(IMethodContext Context)
+        /// <summary>
+        /// Assigns a method context that contains all invoke-able methods
+        /// </summary>
+        /// <param name="Context">The method context this server will invoke methods from</param>
+        public void AssignMethodContext(IMethodContext Context)
         {
             MethodContext = Context;
         }
@@ -99,7 +147,7 @@ namespace Canti
         #region Private
 
         // Listens for new requests and enqueues them
-        public void Listen()
+        private void Listen()
         {
             while (Listener.IsListening)
             {
@@ -247,6 +295,10 @@ namespace Canti
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new API server
+        /// </summary>
+        /// <param name="MaxWorkers">The maximum number of concurrent requests this server will allow</param>
         internal ApiServer(int MaxWorkers)
         {
             // Setup threads and events

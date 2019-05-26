@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Canti.Utils;
 
 namespace Canti.CryptoNote
 {
@@ -24,15 +25,31 @@ namespace Canti.CryptoNote
             P2pServer.OnDataSent += OnDataSent;
         }
 
-        #region Event Callbacks
+        #endregion
 
-        // This is invoked when our underlying P2P server is started successfully
+        #region Events Callbacks
+
+        #region Public
+
+        /// <summary>
+        /// Invoked when the underlying P2P server is started successfully
+        /// </summary>
+        /// <param name="sender">A reference to the P2pServer instance</param>
+        /// <param name="e">Always empty</param>
         public void OnStart(object sender, EventArgs e) { }
 
-        // This is invoked when our underlying P2P server is stopped
+        /// <summary>
+        /// Invoked when the underlying P2P server is stopped
+        /// </summary>
+        /// <param name="sender">A reference to the P2pServer instance</param>
+        /// <param name="e">Always empty</param>
         public void OnStop(object sender, EventArgs e) { }
 
-        // This is invoked when a new P2P peer connection is formed
+        /// <summary>
+        /// Invoked when a new peer connection is detected by the underlying P2P server
+        /// </summary>
+        /// <param name="sender">A reference to the associated P2pPeer instance</param>
+        /// <param name="e">Always empty</param>
         public void OnP2pPeerConnected(object sender, EventArgs e)
         {
             // Get peer data
@@ -52,7 +69,11 @@ namespace Canti.CryptoNote
             }
         }
 
-        // This is invoked when a connected P2P peer is disconnected
+        /// <summary>
+        /// Invoked when a peer's polling attempt comes back unsuccessful, indicating a disconnection
+        /// </summary>
+        /// <param name="sender">A reference to the associated P2pPeer instance</param>
+        /// <param name="e">Always empty</param>
         public void OnP2pPeerDisconnected(object sender, EventArgs e)
         {
             // Get peer data
@@ -62,7 +83,12 @@ namespace Canti.CryptoNote
             RemovePeer(Peer);
         }
 
-        // This is invoked when our underlying P2P server receives data from a peer
+        /// <summary>
+        /// Invoked when a connected peer sends the underlying P2P server data
+        /// </summary>
+        /// <param name="sender">(P2pPeer Peer, byte[] Data) - A reference to 
+        /// the associated P2pPeer instance, as well as the data received</param>
+        /// <param name="e">Always empty</param>
         public void OnDataReceived(object sender, EventArgs e)
         {
             // Get the incoming data
@@ -72,8 +98,17 @@ namespace Canti.CryptoNote
             GetPeer(Data.Peer).AddData(Data.Buffer);
         }
 
-        // This is invoked when our underlying P2P server sends data to a peer
+        /// <summary>
+        /// Invoked when the underlying P2P server sends data to a connected peer
+        /// </summary>
+        /// <param name="sender">(P2pPeer Peer, byte[] Data) - A reference to 
+        /// the associated P2pPeer instance, as well as the data sent</param>
+        /// <param name="e">Always empty</param>
         public void OnDataSent(object sender, EventArgs e) { }
+
+        #endregion
+
+        #region Internal
 
         // This is called when we receive a valid packet
         internal void OnPacketReceived(Peer Peer, Packet Packet)
@@ -82,6 +117,39 @@ namespace Canti.CryptoNote
             Logger?.Debug($"[{Peer.Address} IN] {Packet.Type} {Packet.Flag} (VALIDATED: {Peer.Validated}, " +
                 $"RESPONSE REQUIRED: {Packet.Header.ResponseRequired})");
             //PrintPacketBody(Packet.Body);
+
+            // Wrap this in a try-catch, in case we received an invalid packet
+            try
+            {
+                // Handle this packet
+                switch (Packet.Type)
+                {
+                    case PacketType.HANDSHAKE:
+                        HandleHandshake(Peer, Packet);
+                        break;
+
+                    case PacketType.TIMED_SYNC:
+                        HandleTimedSync(Peer, Packet);
+                        break;
+                }
+
+                // If we reach this far, the packet was valid, set peer
+                Peer.LastSeen = GetTimestamp();
+            }
+
+            // We use this exception type when a packet contains invalid data
+            catch (InvalidOperationException e)
+            {
+                Logger.Warning(e.Message);
+                Peer.Dispose();
+            }
+
+            // If this catch fires, the packet was improperly formated
+            catch
+            {
+                Logger.Warning($"Invalid {Packet.Type} packet received from {Peer.Address}, killing connection...");
+                Peer.Dispose();
+            }
         }
 
         // This is called when we send a packet

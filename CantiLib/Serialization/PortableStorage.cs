@@ -12,7 +12,9 @@ using static Canti.Utils;
 
 namespace Canti
 {
-    // A key-value storage solutions for encoding and decoding objects as raw bytes
+    /// <summary>
+    /// A key-value storage solution for encoding and decoding a set of objects as raw bytes
+    /// </summary>
     [Serializable]
     public sealed class PortableStorage : IEnumerable
     {
@@ -50,10 +52,13 @@ namespace Canti
 
         #region Properties and Fields
 
-        // Dictionary of storage entries
-        private Dictionary<string, dynamic> Entries { get; set; }
+        #region Public
 
-        // Points to entries, just provides a more streamlined way of accessing
+        /// <summary>
+        /// Accesses a stored value
+        /// </summary>
+        /// <param name="Key">The name of the stored value</param>
+        /// <returns>If the given key is present, returns the value being stored, otherwise returns null</returns>
         public dynamic this[string Key]
         {
             get
@@ -86,6 +91,9 @@ namespace Canti
             }
         }
 
+        /// <summary>
+        /// The amount of value entries stored
+        /// </summary>
         public int Count
         {
             get
@@ -96,9 +104,22 @@ namespace Canti
 
         #endregion
 
+        #region Private
+
+        // Dictionary of storage entries
+        private Dictionary<string, dynamic> Entries { get; set; }
+
+        #endregion
+
+        #endregion
+
         #region Operators
 
-        public static implicit operator PortableStorage(Dictionary<string, dynamic >Value)
+        /// <summary>
+        /// Converts a Dictionary object to a PortableStorage object
+        /// </summary>
+        /// <param name="Value">The Dictionary object to convert</param>
+        public static implicit operator PortableStorage(Dictionary<string, dynamic>Value)
         {
             PortableStorage Output = new PortableStorage();
             foreach (var Entry in Value)
@@ -114,7 +135,11 @@ namespace Canti
 
         #region Public
 
-        // Serializes our entry dictionary to a byte array
+        /// <summary>
+        /// Serializes this storage object into a byte array
+        /// </summary>
+        /// <param name="IncludeHeader">Whether or not to include the storage header in the output</param>
+        /// <returns>A serialized byte array representation of all stored value entries</returns>
         public byte[] Serialize(bool IncludeHeader = true)
         {
             // Lock our dictionary to prevent race conditions
@@ -152,7 +177,10 @@ namespace Canti
             }
         }
 
-        // Required for IEnumerable interface
+        /// <summary>
+        /// Gets the entry enumerator, allowing for foreach statements
+        /// </summary>
+        /// <returns>An enumerator object</returns>
         public IEnumerator GetEnumerator()
         {
             return Entries.GetEnumerator();
@@ -422,14 +450,21 @@ namespace Canti
 
         #region Constructors
 
-        // Default constructor, for when we want to serialize data into a byte array output
+        /// <summary>
+        /// Initializes a new storage object
+        /// </summary>
         public PortableStorage()
         {
             // Initialize our entry dictionary
             Entries = new Dictionary<string, dynamic>();
         }
 
-        // This constructor is called when a block of data needs to be deserialized
+        /// <summary>
+        /// Deserializes a byte array into a storage object
+        /// </summary>
+        /// <param name="Data">The byte array to be deserialized from</param>
+        /// <param name="Buffer">The remaining contents of the data byte array</param>
+        /// <param name="IncludeHeader">Whether or not the input byte array includes a storage header</param>
         public PortableStorage(byte[] Data, out byte[] Buffer, bool IncludeHeader = true)
         {
             // Initialize our entry dictionary

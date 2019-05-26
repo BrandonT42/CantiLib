@@ -8,52 +8,96 @@ using System.IO;
 
 namespace Canti
 {
-    // Enumerator for log levels
+    /// <summary>
+    /// An enumerator that specifies which level of output a logger will utilize
+    /// </summary>
     public enum LogLevel
     {
-        // No logging happens
+        /// <summary>
+        /// No logging takes place
+        /// </summary>
         NONE = -2,
 
-        // Only important
+        /// <summary>
+        /// Only messages with the "important" label are shown
+        /// </summary>
         IMPORTANT_ONLY = -1,
 
-        // Only important, info, and errors
+        /// <summary>
+        /// Only messages with the "important", "info", and "error" labels are shown
+        /// </summary>
         DEFAULT = 0,
 
-        // Only important, info, errors, and warnings
+        /// <summary>
+        /// Only messages with the "important", "info", "error", and "warning" labels are shown
+        /// </summary>
         ENHANCED = 1,
 
-        // All label types with 2 figure resolution of timestamps
+        /// <summary>
+        /// All message types are shown, including "debug", and time labels show TWO decimal places
+        /// </summary>
         DEBUG = 2,
 
-        // All label types with 6 figure resolution of timestamps
+        /// <summary>
+        /// All message types are shown, including "debug", and time labels show SIX decimal places
+        /// </summary>
         MAX = 3
     }
 
-    // TODO - queue output instead of writing it at once?
+    /// <summary>
+    /// Logger utility to facilitate logging at different levels and saving to a log file
+    /// </summary>
     public sealed class Logger
     {
         #region Properties and Fields
 
-        // The log level that is displayed
+        /// <summary>
+        /// What level of logging will be shown
+        /// </summary>
         public LogLevel LogLevel { get; set; }
 
-        // An optional file that all logger output is written to
+        /// <summary>
+        /// (OPTIONAL) A file where all logger output is also written to
+        /// </summary>
         public string LogFile { get; set; }
 
-        // If this is set to true, no time or label prefix is shown
+        /// <summary>
+        /// If set to true, a time and label prefix is shown alongside each log message
+        /// </summary>
         public bool ShowPrefix { get; set; }
 
-        // An optional custom prefix
+        /// <summary>
+        /// (OPTIONAL) A custom prefix that will be shown before a label name, if showing prefixes
+        /// </summary>
         public string CustomPrefix { get; set; }
 
-        // The colors we will use when writing
+        /// <summary>
+        /// The default color for logger output
+        /// </summary>
         public ConsoleColor InfoColor { get; set; }
+
+        /// <summary>
+        /// The color important messages will be shown in when logging
+        /// </summary>
         public ConsoleColor ImportantColor { get; set; }
+
+        /// <summary>
+        /// The color debug messages will be shown in when logging
+        /// </summary>
         public ConsoleColor DebugColor { get; set; }
+
+        /// <summary>
+        /// The color warning messages will be shown in when logging
+        /// </summary>
         public ConsoleColor WarningColor { get; set; }
+
+        /// <summary>
+        /// The color error messages will be shown in when logging
+        /// </summary>
         public ConsoleColor ErrorColor { get; set; }
-        public ConsoleColor DefaultColor { get; set; }
+
+        // Stores the current console color at the time of initialization
+        private ConsoleColor DefaultColor { get; set; }
 
         #endregion
 
@@ -61,7 +105,11 @@ namespace Canti
 
         #region Public
 
-        // Writes with the info label and an alternate color
+        /// <summary>
+        /// Logs an "info" message with the specified "important" message color
+        /// </summary>
+        /// <param name="Input">The value to write</param>
+        /// <param name="Params">An array of objects to write using format</param>
         public void Important(object Input, params object[] Params)
         {
             if (LogLevel < LogLevel.IMPORTANT_ONLY) return;
@@ -69,7 +117,11 @@ namespace Canti
             Write("INFO", Input, Params);
         }
 
-        // Writes with the info label and default color
+        /// <summary>
+        /// Logs an "info" message
+        /// </summary>
+        /// <param name="Input">The value to write</param>
+        /// <param name="Params">An array of objects to write using format</param>
         public void WriteLine(object Input, params object[] Params)
         {
             if (LogLevel < LogLevel.DEFAULT) return;
@@ -77,7 +129,11 @@ namespace Canti
             Write("INFO", Input, Params);
         }
 
-        // Writes with the error label and error color
+        /// <summary>
+        /// Logs an "error" message
+        /// </summary>
+        /// <param name="Input">The value to write</param>
+        /// <param name="Params">An array of objects to write using format</param>
         public void Error(object Input, params object[] Params)
         {
             if (LogLevel < LogLevel.DEFAULT) return;
@@ -85,7 +141,11 @@ namespace Canti
             Write("ERROR", Input, Params);
         }
 
-        // Writes with the warning label and warning color
+        /// <summary>
+        /// Logs a "warning" message
+        /// </summary>
+        /// <param name="Input">The value to write</param>
+        /// <param name="Params">An array of objects to write using format</param>
         public void Warning(object Input, params object[] Params)
         {
             if (LogLevel < LogLevel.ENHANCED) return;
@@ -93,7 +153,11 @@ namespace Canti
             Write("WARNING", Input, Params);
         }
 
-        // Writes with the debug label and debug color
+        /// <summary>
+        /// Logs a "debug" message
+        /// </summary>
+        /// <param name="Input">The value to write</param>
+        /// <param name="Params">An array of objects to write using format</param>
         public void Debug(object Input, params object[] Params)
         {
             if (LogLevel < LogLevel.DEBUG) return;
@@ -105,6 +169,7 @@ namespace Canti
 
         #region Private
 
+        // Writes a log message to the console, as well as to an optional log file
         private void Write(string Label, object Input, params object[] Params)
         {
             // Check if we are logging
@@ -116,6 +181,7 @@ namespace Canti
             // Add time and label prefix
             if (ShowPrefix)
             {
+                // Max log level, 6 figures of decimal resolution
                 if (LogLevel >= LogLevel.MAX)
                 {
                     if (!string.IsNullOrEmpty(CustomPrefix))
@@ -128,6 +194,8 @@ namespace Canti
                         Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ffffff")} [{Label}]".PadRight(37);
                     }
                 }
+
+                // Debug log level, 2 figures of decimal resolution
                 else if (LogLevel == LogLevel.DEBUG)
                 {
                     if (!string.IsNullOrEmpty(CustomPrefix))
@@ -140,6 +208,8 @@ namespace Canti
                         Output = $"{DateTime.Now.ToString("dd-MM-yyyy hh:mm:ss.ff")} [{Label}]".PadRight(33);
                     }
                 }
+
+                // Default, no decimal places in time prefix
                 else
                 {
                     if (!string.IsNullOrEmpty(CustomPrefix))
@@ -186,8 +256,12 @@ namespace Canti
 
         #region Constructors
 
+        /// <summary>
+        /// Initialized a new logger instance
+        /// </summary>
         public Logger()
         {
+            // Store the current console color so we can reset it after writing a message
             DefaultColor = Console.ForegroundColor;
         }
 

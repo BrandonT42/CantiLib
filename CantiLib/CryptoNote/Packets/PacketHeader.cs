@@ -8,46 +8,42 @@ using static Canti.Utils;
 
 namespace Canti.CryptoNote
 {
+    // Contains information about a packet's contents
     internal sealed class PacketHeader
     {
-        #region Properties
+        #region Properties and Fields
+
+        #region Internal
 
         // This signature number must match on both the receiving and sending sides
-        public ulong Signature { get; set; }
+        internal ulong Signature { get; set; }
 
         // This is the version of the levin protocol we will be using
-        public uint ProtocolVersion { get; set; }
+        internal uint ProtocolVersion { get; set; }
 
         // Command code is the packet type
-        public uint CommandCode { get; set; }
+        internal uint CommandCode { get; set; }
 
         // Whether or not we are requesting a response
-        public bool ResponseRequired { get; set; }
+        internal bool ResponseRequired { get; set; }
 
         // Payload size is how many bytes the body of this packet contains
-        public ulong PayloadSize { get; set; }
+        internal ulong PayloadSize { get; set; }
 
         // Return code that says whether or not a request was successful or not
-        public uint ReturnCode { get; set; }
+        internal uint ReturnCode { get; set; }
 
         // Flag is the packet type (request or response)
-        public uint Flag { get; set; }
+        internal uint Flag { get; set; }
+
+        #endregion
 
         #endregion
 
         #region Methods
 
-        // Serializes the header information into a byte array
-        // For reference - A levin packet header is always 33 bytes,
-        // and has data written in the following order:
-        // Signature (8 bytes)
-        // Payload Size (8 bytes)
-        // Response Required (1 byte)
-        // Command Code (4 bytes)
-        // Return Code (4 bytes)
-        // Flag (4 bytes)
-        // Protocol Version (4 bytes)
-        public byte[] Serialize()
+        // Serializes the header information into a 33-byte array
+        internal byte[] Serialize()
         {
             // Create output buffer
             byte[] Output = new byte[0];
@@ -70,7 +66,7 @@ namespace Canti.CryptoNote
         #region Constructors
 
         // Deserializes the header information from a byte array
-        public PacketHeader(byte[] Data)
+        internal PacketHeader(byte[] Data)
         {
             // Decode signature
             Signature = ByteArrayToInteger<ulong>(Data);
@@ -100,7 +96,8 @@ namespace Canti.CryptoNote
             ProtocolVersion = ByteArrayToInteger<uint>(Data);
         }
 
-        public PacketHeader() { }
+        // Initializes an empty packet header
+        internal PacketHeader() { }
 
         #endregion
     }

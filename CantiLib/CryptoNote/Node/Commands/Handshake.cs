@@ -98,7 +98,7 @@ namespace Canti.CryptoNote
             }
         }
 
-        // Request a handshake with a newly connected peer
+        // Sends a handshake request packet
         private void Handshake(Peer Peer)
         {
             // Check if this peer is already validated

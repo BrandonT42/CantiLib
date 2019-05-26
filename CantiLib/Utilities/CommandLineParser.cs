@@ -9,24 +9,35 @@ using System.Linq;
 
 namespace Canti
 {
-    // Contains information about a command line argument/option
+    /// <summary>
+    /// Contains information about a command line argument/option
+    /// </summary>
     public sealed class CommandLineOption
     {
         #region Properties and Fields
 
-        // The description for this option
+        /// <summary>
+        /// A description of what this option is for
+        /// </summary>
         internal string Description { get; set; }
 
-        // The expected type we compare against when parsing this option's value
+        /// <summary>
+        /// The expected value type for this option
+        /// </summary>
         internal Type Type { get; set; }
 
-        // The delegate that gets invoked when this option's value is parsed
+        /// <summary>
+        /// A callback method that is invoked when this option is found
+        /// </summary>
         internal dynamic Handler { get; set; }
 
         #endregion
 
         #region Constructors
 
+        /// <summary>
+        /// Creates a new command line argument/option
+        /// </summary>
         internal CommandLineOption(string Description, Type Type, Action<dynamic> Handler)
         {
             this.Description = Description;
@@ -37,11 +48,20 @@ namespace Canti
         #endregion
     }
 
+    /// <summary>
+    /// A dictionary of command line arguments and callbacks
+    /// </summary>
     public sealed class CommandLineArguments : Dictionary<string, CommandLineOption>
     {
         #region Methods
 
-        // Allows us to simplify adding of values when creating an argument list
+        /// <summary>
+        /// Adds a command line argument to the list of options
+        /// </summary>
+        /// <param name="Option">The flag name to look for while parsing</param>
+        /// <param name="Description">A description of what this option is for</param>
+        /// <param name="Type">The expected value type for this option</param>
+        /// <param name="Handler">A callback method that is invoked when this option is found</param>
         public void Add(string Option, string Description, Type Type, Action<dynamic> Handler)
         {
             Add(Option, new CommandLineOption(Description, Type, Handler));
@@ -51,18 +71,27 @@ namespace Canti
 
         #region Constructors
 
-        // Sets the default comparer to case-insensitive
+        /// <summary>
+        /// A dictionary of command line arguments, entries are case-insensitive
+        /// </summary>
         public CommandLineArguments() : base(StringComparer.OrdinalIgnoreCase) { }
 
         #endregion
     }
 
-    // Simplifies parsing of command line arguments/options
+    /// <summary>
+    /// A command line argument parser utility class that decodes launch arguments
+    /// </summary>
     public sealed class CommandLineParser
     {
         #region Methods
 
-        // Parses command line arguments
+        /// <summary>
+        /// Parses an arguments array and looks for a set of specified command line arguments
+        /// </summary>
+        /// <param name="Args">A dictionary of commandline arguments and callbacks</param>
+        /// <param name="Input">An array of arguments a program was launched with</param>
+        /// <returns></returns>
         public static bool Parse(CommandLineArguments Args, string[] Input)
         {
             // Set a read state - this could be an enum, but... *shrug*
@@ -152,7 +181,10 @@ namespace Canti
             }
         }
 
-        // Prints out all given arguments
+        /// <summary>
+        /// Displays all arguments, descriptions, types, and an example for each argument flag
+        /// </summary>
+        /// <param name="Args">The dictionary of command line arguments to display</param>
         public static void ShowDescriptions(CommandLineArguments Args)
         {
             // Print header

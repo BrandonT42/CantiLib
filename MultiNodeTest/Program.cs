@@ -1,7 +1,13 @@
-﻿using Canti.CryptoNote;
+﻿//
+// Copyright (c) 2018-2019 Canti, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
+
+using Canti;
+using Canti.CryptoNote;
 using System;
 
-namespace Canti
+namespace CantiTests
 {
     partial class Program
     {

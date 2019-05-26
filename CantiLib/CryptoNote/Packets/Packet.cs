@@ -11,15 +11,27 @@ namespace Canti.CryptoNote
     {
         #region Properties
 
-        public PacketType Type { get; private set; }
-        public PacketFlag Flag { get; private set; }
-        public PacketHeader Header { get; private set; }
-        public PortableStorage Body { get; private set; }
+        #region Internal
+
+        // The type of packet
+        internal PacketType Type { get; private set; }
+
+        // Whether this packet is a request or response
+        internal PacketFlag Flag { get; private set; }
+
+        // The packet's header
+        internal PacketHeader Header { get; private set; }
+
+        // The packet's body
+        internal PortableStorage Body { get; private set; }
+
+        #endregion
 
         #endregion
 
         #region Methods
 
+        // Serializes this packet to a byte array for sending to peers
         public byte[] Serialize()
         {
             byte[] Output = new byte[0];
@@ -35,6 +47,7 @@ namespace Canti.CryptoNote
 
         #region Constructors
 
+        // Initializes a new outgoing packet
         internal Packet(PacketType Type, PacketFlag Flag, bool ResponseRequired, bool Success = true)
         {
             this.Type = Type;
@@ -51,6 +64,7 @@ namespace Canti.CryptoNote
             };
         }
 
+        // Initializes a new incoming packet
         internal Packet(PacketHeader Header, PortableStorage Body)
         {
             Type = (PacketType)Header.CommandCode;
@@ -58,37 +72,6 @@ namespace Canti.CryptoNote
             this.Header = Header;
             this.Body = Body;
         }
-
-        /*internal Packet(byte[] Data)
-        {
-            // Verify packet size
-            if (Data.Length < 33)
-            {
-                throw new ArgumentException("Supplied byte data does not meet minimum header size");
-            }
-
-            // Decode packet header
-            byte[] HeaderBytes = new byte[33];
-            Buffer.BlockCopy(Data, 0, HeaderBytes, 0, 33);
-            Header = new PacketHeader(HeaderBytes);
-            Type = (PacketType)Header.CommandCode;
-
-            // Get packet body bytes
-            byte[] Raw = new byte[Data.Length - 33];
-            Buffer.BlockCopy(Data, 33, Raw, 0, Raw.Length);
-
-            // Check payload size
-            if (Header.PayloadSize != (ulong)Raw.LongLength)
-            {
-                // TODO - wait for X amount of time for rest of packet if this doesn't match up
-                //throw new ArgumentOutOfRangeException("Packet payload size doesn't match received size");
-            }
-            else
-            {
-                // Decode packet body
-                Body = new PortableStorage(Raw, out _);
-            }
-        }*/
 
         #endregion
     }

@@ -208,7 +208,7 @@ namespace Canti.CryptoNote
                     var Body = new PortableStorage(BodyBytes, out _);
 
                     // Invoke our packet received handler
-                    Node.HandlePacket(this, new Packet(Header, Body));
+                    Node.OnPacketReceived(this, new Packet(Header, Body));
                 }
                 catch { }
 
