@@ -4,6 +4,7 @@
 // Please see the included LICENSE file for more information.
 
 using Canti;
+using Canti.CryptoNote;
 using System;
 
 namespace CSTurtleCoin
@@ -69,7 +70,7 @@ namespace CSTurtleCoin
             }
 
             // Create a node instance
-            Node = new CryptoNote.Node(Configuration)
+            Node = new Node(Configuration)
             {
                 // Assign port values
                 P2pPort = P2pPort,
