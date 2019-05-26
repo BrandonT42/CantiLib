@@ -1,5 +1,5 @@
 ﻿//
-// Copyright (c) 2006-2013, Andrey N.Sabelnikov, www.sabelnikov.net
+// Copyright (c) 2006-2013, Andrey N. Sabelnikov, www.sabelnikov.net
 // Copyright (c) 2012-2017, The CryptoNote developers, The Bytecoin developers
 // Copyright (c) 2018-2019 Canti, The TurtleCoin Developers
 // 

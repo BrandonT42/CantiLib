@@ -3,9 +3,10 @@
 // 
 // Please see the included LICENSE file for more information.
 
+using Canti;
 using System;
 
-namespace Canti
+namespace CSTurtleCoin
 {
     partial class Daemon
     {

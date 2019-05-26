@@ -3,11 +3,12 @@
 // 
 // Please see the included LICENSE file for more information.
 
+using Canti;
 using Canti.CryptoNote;
 using System;
 using static Canti.Utils;
 
-namespace Canti
+namespace CSTurtleCoin
 {
     partial class Daemon
     {
