@@ -178,8 +178,8 @@ namespace Canti
         private void AcceptContext()
         {
             // Create a wait handle array so we can cancel this thread if need be
-            WaitHandle[] wait = new[] { ReadyEvent, StopEvent };
-            while (0 == WaitHandle.WaitAny(wait))
+            WaitHandle[] Wait = new[] { ReadyEvent, StopEvent };
+            while (0 == WaitHandle.WaitAny(Wait))
             {
                 // Lock our context queue to prevent race conditions
                 lock (ContextQueue)

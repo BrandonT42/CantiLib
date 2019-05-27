@@ -134,8 +134,8 @@ namespace Canti.CryptoNote
         private void ReadPacketBuffer()
         {
             // Create a wait handle so we only process data as it's sent to us
-            WaitHandle[] wait = new[] { ReadyEvent, StopEvent };
-            while (0 == WaitHandle.WaitAny(wait))
+            WaitHandle[] Wait = new[] { ReadyEvent, StopEvent };
+            while (0 == WaitHandle.WaitAny(Wait))
             {
                 // Lock our incoming data queue to prevent race conditions
                 lock (IncomingBufferQueue)

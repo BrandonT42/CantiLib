@@ -309,8 +309,8 @@ namespace Canti
         private void AcceptPeerConnection()
         {
             // Create a wait handle array so we can cancel this thread if need be
-            WaitHandle[] wait = new[] { ReadyEvent, StopEvent };
-            while (0 == WaitHandle.WaitAny(wait))
+            WaitHandle[] Wait = new[] { ReadyEvent, StopEvent };
+            while (0 == WaitHandle.WaitAny(Wait))
             {
                 // Lock our connection queue to prevent any race conditions
                 lock (ConnectionQueue)

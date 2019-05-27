@@ -8,11 +8,14 @@ using static Canti.Utils;
 namespace Canti.CryptoNote
 {
     // Handles all blockchain and storage operations
-    internal sealed class BlockchainStorage
+    internal sealed partial class Blockchain
     {
         #region Properties and Fields
 
         #region Internal
+
+        // Logger used to log messages
+        internal Logger Logger { get; set; }
 
         // The current height of the blockchain
         internal int Height { get; set; }
@@ -31,13 +34,6 @@ namespace Canti.CryptoNote
 
         #endregion
 
-        #region Private
-
-        // The database we will use to store information
-        private IDatabase Database { get; set; }
-
-        #endregion
-
         #endregion
 
         #region Methods
@@ -45,11 +41,19 @@ namespace Canti.CryptoNote
         // Starts the blockchain handler and checks database connection
         internal void Start(IDatabase Database)
         {
-            // Assign and start database
-            this.Database = Database;
-            this.Database.Start();
+            // Start database
+            StartDatabase(Database);
 
             // TODO - all this
+        }
+
+        // Stops the blockchain handler and closes the database connection
+        internal void Stop()
+        {
+            // Stop database
+            StopDatabase();
+
+            // TODO
         }
 
         #endregion
@@ -57,7 +61,7 @@ namespace Canti.CryptoNote
         #region Constructors
 
         // Initializes a new blockchain storage
-        internal BlockchainStorage()
+        internal Blockchain()
         {
             // Setup default variable values
             Height = 50099;

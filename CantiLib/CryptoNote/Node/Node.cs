@@ -4,6 +4,7 @@
 // Please see the included LICENSE file for more information.
 
 using System;
+using System.IO;
 using static Canti.Utils;
 
 namespace Canti.CryptoNote
@@ -59,7 +60,7 @@ namespace Canti.CryptoNote
         private IDatabase Database { get; set; }
 
         // This node's blockchain storage handler
-        private BlockchainStorage Blockchain { get; set; }
+        private Blockchain Blockchain { get; set; }
 
         // This node's P2P server
         private P2pServer P2pServer { get; set; }
@@ -140,6 +141,12 @@ namespace Canti.CryptoNote
             {
                 Peer.Dispose();
             }
+
+            // Stop blockchain handler
+            Logger?.WriteLine("Stopping blockchain handler...");
+            Blockchain.Stop();
+
+            // Node stopped
             Logger?.Important("Node stopped.");
         }
 
@@ -200,11 +207,16 @@ namespace Canti.CryptoNote
 
             // Setup our database
             Logger?.WriteLine("Setting up local storage...");
+            if (!Directory.Exists(Globals.DATABASE_DIRECTORY))
+            {
+                Logger?.WriteLine("Creating directories...");
+                Directory.CreateDirectory(Globals.DATABASE_DIRECTORY);
+            }
             switch (Globals.DATABASE_TYPE)
             {
                 case DatabaseType.SQLITE:
                     DatabaseLocation = CombinePath(Globals.DATABASE_DIRECTORY, Globals.DATABASE_LOCATION);
-                    Database = new SQLite(DatabaseLocation);
+                    Database = new Sqlite(DatabaseLocation);
                     break;
                 default:
                     throw new ArgumentException("Invalid or non-specified database type");
@@ -212,7 +224,10 @@ namespace Canti.CryptoNote
 
             // Setup our blockchain handler
             Logger?.WriteLine("Setting up blockchain handler...");
-            Blockchain = new BlockchainStorage();
+            Blockchain = new Blockchain()
+            {
+                Logger = Logger
+            };
 
             // Create our P2P server
             Logger?.WriteLine("Setting up P2P server...");
