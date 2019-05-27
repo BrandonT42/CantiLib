@@ -69,6 +69,8 @@ Thank you to all the awesome developers who have made their software open source
 * The CryptoNote Developers, The ByteCoin Developers, The Monero Developers
 * Andrey N.Sabelnikov (For his Epee serialization which was reverse-engineered)
 * The NewtonSoft Developers (For their excellent JSon library)
+* The Microsoft Developers (For the Microsoft.Data.Sqlite.Core package)
+* Eric Sink (For his bundle_green SQLite PCL package)
 
 (Will add more as added)
 
